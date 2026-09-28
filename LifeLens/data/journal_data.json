@@ -1,0 +1,12 @@
+[
+    {
+        "id": "b131ecb8-9351-497a-b07d-7ce5be9408d1",
+        "date": "2026-09-27",
+        "mood": "Good",
+        "energy": 7,
+        "activity": "Reading",
+        "text": "this was a good day but I was bored after the afternoon but I still read the book",
+        "image": "data/images/pixel_entry_20260927_210448_883232.png",
+        "is_sample": false
+    }
+]
