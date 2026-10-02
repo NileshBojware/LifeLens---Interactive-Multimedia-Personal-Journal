@@ -583,14 +583,18 @@ class DashboardScreen(BaseScreen):
 
         mood_info = MOOD_MAP.get(item.get("mood", "Good"), {"emoji": "😊", "color": t["accent_primary"]})
         
+        # Mood avatar badge with crisp background and vibrant emoji coloring
+        mood_badge = tk.Frame(item_frame, bg=t["bg_card"], bd=1, relief="ridge", width=36, height=36)
+        mood_badge.grid(row=0, column=0, rowspan=2, padx=(5, 6), pady=3, sticky="ns")
+        mood_badge.pack_propagate(False)
+
         tk.Label(
-            item_frame,
+            mood_badge,
             text=f"{mood_info['emoji']}",
-            font=("Consolas", 14),
-            bg=t["bg_inner"],
-            padx=6,
-            pady=2
-        ).grid(row=0, column=0, rowspan=2, sticky="ns")
+            font=("Segoe UI Emoji", 14),
+            fg=mood_info.get("color", t["accent_gold"]),
+            bg=t["bg_card"]
+        ).pack(expand=True)
 
         top_row = tk.Frame(item_frame, bg=t["bg_inner"])
         top_row.grid(row=0, column=1, sticky="ew", padx=(0, 6), pady=(3, 1))
@@ -1630,33 +1634,60 @@ class InsightsScreen(BaseScreen):
 
         # Subplot 3: Energy Waveform
         ax3 = fig.add_subplot(212)
-        ax3.set_facecolor(t["bg_card"])
-        ax3.set_title("ENERGY LEVEL OSCILLATION WAVEFORM", fontfamily=FONT_MONO, fontsize=9, fontweight="bold", color=t["accent_green"], pad=8)
+        ax3.set_facecolor(t.get("bg_inner", "#111122"))
+        ax3.set_title(">> ENERGY LEVEL OSCILLATION WAVEFORM", fontfamily=FONT_MONO, fontsize=9.5, fontweight="bold", color=t.get("accent_primary", "#00f0ff"), pad=8)
 
         trend = stats.get("energy_trend", [])
+        waveform_color = t.get("accent_primary", "#00f0ff")
+        gold_marker = t.get("accent_gold", "#ffd700")
+        grid_color = t.get("accent_primary", "#00f0ff")
+        border_color = t.get("border", "#3d3a68")
+
         if trend and len(trend) > 1:
             dates = [tr[0] for tr in trend]
             energies = [tr[1] for tr in trend]
             
-            ax3.step(dates, energies, where='mid', color=t["accent_primary"], linewidth=2.5)
-            ax3.plot(dates, energies, 'o', color=t["accent_gold"], markersize=6)
-            ax3.fill_between(dates, energies, step='mid', color=t["accent_primary"], alpha=0.15)
+            # Bright luminous waveform line and vivid fill area
+            ax3.step(dates, energies, where='mid', color=waveform_color, linewidth=3, zorder=3)
+            ax3.plot(dates, energies, 'o', color=gold_marker, markersize=7, markeredgecolor="#ffffff", markeredgewidth=1.5, zorder=4)
+            ax3.fill_between(dates, energies, step='mid', color=waveform_color, alpha=0.35, zorder=2)
+            
+            # Value badges on each point for instant clarity
+            for d, val in zip(dates, energies):
+                ax3.text(d, val + 0.45, f"{int(val) if val == int(val) else val}", 
+                         ha="center", va="bottom", fontsize=7.5, fontweight="bold", 
+                         color=gold_marker, fontfamily=FONT_MONO, zorder=5)
+
             ax3.set_ylim(0, 11)
-            ax3.set_ylabel("ENERGY", fontfamily=FONT_MONO, fontsize=7, color=t["text_muted"])
-            ax3.grid(True, linestyle=":", alpha=0.3, color=t["border"])
+            ax3.set_ylabel("ENERGY (1-10)", fontfamily=FONT_MONO, fontsize=7.5, fontweight="bold", color=t["text_main"])
+            ax3.grid(True, linestyle="--", alpha=0.35, color=grid_color)
             ax3.spines['top'].set_visible(False)
             ax3.spines['right'].set_visible(False)
-            ax3.spines['left'].set_color(t["border"])
-            ax3.spines['bottom'].set_color(t["border"])
-            ax3.tick_params(colors=t["text_main"], labelsize=7)
+            ax3.spines['left'].set_color(border_color)
+            ax3.spines['left'].set_linewidth(1.2)
+            ax3.spines['bottom'].set_color(border_color)
+            ax3.spines['bottom'].set_linewidth(1.2)
+            ax3.tick_params(axis='x', colors=t["text_main"], labelsize=7.5)
+            ax3.tick_params(axis='y', colors=t["text_main"], labelsize=7.5)
             fig.autofmt_xdate()
         elif trend and len(trend) == 1:
-            ax3.plot([trend[0][0]], [trend[0][1]], marker='o', color=t["accent_primary"], markersize=8)
+            d_single, val_single = trend[0][0], trend[0][1]
+            ax3.axhline(y=val_single, color=waveform_color, linestyle="--", linewidth=2.5, alpha=0.85, zorder=2)
+            ax3.plot([d_single], [val_single], marker='o', color=gold_marker, markersize=10, markeredgecolor="#ffffff", markeredgewidth=2, zorder=4)
+            ax3.text(d_single, val_single + 0.6, f"STAMINA: {val_single}/10", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color=gold_marker, fontfamily=FONT_MONO, zorder=5)
             ax3.set_ylim(0, 11)
-            ax3.set_ylabel("ENERGY", fontfamily=FONT_MONO, fontsize=7, color=t["text_muted"])
-            ax3.grid(True, linestyle=":", alpha=0.3, color=t["border"])
+            ax3.set_ylabel("ENERGY (1-10)", fontfamily=FONT_MONO, fontsize=7.5, fontweight="bold", color=t["text_main"])
+            ax3.grid(True, linestyle="--", alpha=0.35, color=grid_color)
+            ax3.spines['top'].set_visible(False)
+            ax3.spines['right'].set_visible(False)
+            ax3.spines['left'].set_color(border_color)
+            ax3.spines['left'].set_linewidth(1.2)
+            ax3.spines['bottom'].set_color(border_color)
+            ax3.spines['bottom'].set_linewidth(1.2)
+            ax3.tick_params(axis='x', colors=t["text_main"], labelsize=7.5)
+            ax3.tick_params(axis='y', colors=t["text_main"], labelsize=7.5)
         else:
-            ax3.text(0.5, 0.5, "LOG ENTRIES TO VISUALIZE OSCILLATION", ha="center", va="center", color=t["text_muted"], fontfamily=FONT_MONO)
+            ax3.text(0.5, 0.5, "LOG ENTRIES TO VISUALIZE OSCILLATION", ha="center", va="center", color=gold_marker, fontfamily=FONT_MONO, fontweight="bold")
             ax3.axis("off")
 
         fig.tight_layout(pad=1.8)
@@ -1866,6 +1897,119 @@ class AboutScreen(BaseScreen):
         )
         self.quote_preview_btn.pack(side="left")
 
+        # -------------------------------------------------------------
+        # VIRTUAL COMPANION & SLIDING PET SETTINGS CARTRIDGE
+        # -------------------------------------------------------------
+        self.pet_card = tk.Frame(self.card, bg=t["bg_inner"], bd=2, relief="ridge", padx=12, pady=10)
+        self.pet_card.pack(fill="x", pady=(0, 14))
+
+        self.pet_title = tk.Label(
+            self.pet_card,
+            text="[ 🐾 VIRTUAL COMPANION & SLIDING PET CONTROLS ]",
+            font=FONT_RETRO_HEADER,
+            fg=t["accent_gold"],
+            bg=t["bg_inner"]
+        )
+        self.pet_title.pack(anchor="w", pady=(0, 8))
+
+        pet_grid = tk.Frame(self.pet_card, bg=t["bg_inner"])
+        pet_grid.pack(fill="x")
+        pet_grid.columnconfigure(0, weight=1)
+        pet_grid.columnconfigure(1, weight=1)
+
+        # Left Column: Pet Status, Model Picker, Sleep Toggle
+        self.pet_left_box = tk.Frame(pet_grid, bg=t["bg_inner"], padx=6, pady=4)
+        self.pet_left_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+
+        self.pet_status_lbl = tk.Label(
+            self.pet_left_box,
+            text="STATUS: 🐾 ACTIVE (SLIDING ACROSS SCREEN)" if not self.controller.pet_manager.is_sleeping else "STATUS: 💤 SLEEPING (HIDDEN)",
+            font=FONT_RETRO_SMALL,
+            fg=t["accent_green"] if not self.controller.pet_manager.is_sleeping else t["text_muted"],
+            bg=t["bg_inner"]
+        )
+        self.pet_status_lbl.pack(anchor="w", pady=(0, 4))
+
+        pet_btn_row = tk.Frame(self.pet_left_box, bg=t["bg_inner"])
+        pet_btn_row.pack(fill="x", pady=(0, 8))
+
+        self.pet_sleep_btn = tk.Button(
+            pet_btn_row,
+            text="[ 💤 MAKE PET SLEEP ]" if not self.controller.pet_manager.is_sleeping else "[ 🐾 WAKE UP COMPANION ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["accent_gold"] if not self.controller.pet_manager.is_sleeping else t["accent_primary"],
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            command=self._on_toggle_pet_sleep
+        )
+        self.pet_sleep_btn.pack(side="left", padx=(0, 6))
+
+        self.pet_gif_btn = tk.Button(
+            pet_btn_row,
+            text="[ 📁 LOAD CUSTOM GIF ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["accent_primary"],
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            command=self._on_choose_custom_pet_gif
+        )
+        self.pet_gif_btn.pack(side="left")
+
+        # Pet Type Selector
+        tk.Label(
+            self.pet_left_box,
+            text="// CHOOSE PET MODEL (OR CUSTOM GIF):",
+            font=FONT_RETRO_SMALL,
+            fg=t["text_muted"],
+            bg=t["bg_inner"]
+        ).pack(anchor="w", pady=(0, 2))
+
+        self.pet_combo = ttk.Combobox(
+            self.pet_left_box,
+            values=["Pixel Cyber Cat", "8-Bit Space Dog", "Retro Dino", "Custom GIF"],
+            state="readonly",
+            font=(FONT_MONO, 8)
+        )
+        self.pet_combo.set(self.controller.pet_manager.pet_type)
+        self.pet_combo.pack(fill="x")
+        self.pet_combo.bind("<<ComboboxSelected>>", self._on_pet_type_change)
+
+        # Right Column: Walk Speed & File Info
+        self.pet_right_box = tk.Frame(pet_grid, bg=t["bg_inner"], padx=6, pady=4)
+        self.pet_right_box.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+
+        self.pet_speed_lbl = tk.Label(
+            self.pet_right_box,
+            text=f"🏃 SLIDE SPEED: {self.controller.pet_manager.speed} PX / STEP",
+            font=FONT_RETRO_SMALL,
+            fg=t["accent_primary"],
+            bg=t["bg_inner"]
+        )
+        self.pet_speed_lbl.pack(anchor="w", pady=(0, 2))
+
+        self.pet_speed_scale = ttk.Scale(
+            self.pet_right_box,
+            from_=1,
+            to=10,
+            orient="horizontal",
+            value=self.controller.pet_manager.speed,
+            command=self._on_pet_speed_change
+        )
+        self.pet_speed_scale.pack(fill="x", pady=(0, 6))
+
+        self.pet_file_lbl = tk.Label(
+            self.pet_right_box,
+            text=f">> ACTIVE MEDIA: {os.path.basename(self.controller.pet_manager.get_resolved_path() or 'default_pet.gif')}",
+            font=FONT_RETRO_SMALL,
+            fg=t["text_muted"],
+            bg=t["bg_inner"]
+        )
+        self.pet_file_lbl.pack(anchor="w")
+
         # Personalities List
         self.pers_title = tk.Label(
             self.card,
@@ -1908,14 +2052,14 @@ class AboutScreen(BaseScreen):
         h2.grid(row=0, column=2, sticky="ew")
 
         rows = [
-            ("Tkinter", "GUI and navigation", "Dynamic 5-personality theme windows"),
-            ("Pillow", "Image processing", "8-Bit pixel filters & thumbnails"),
+            ("Tkinter", "GUI and navigation", "Dynamic 6-personality theme windows & Sliding Pet"),
+            ("Pillow", "Image processing & Animated GIFs", "8-Bit pixel filters & Pet GIF playback"),
             ("OpenCV (cv2)", "Camera capture", "Live webcam snapshot upload"),
             ("SpeechRecognition", "Voice input", "Voice Entry (Speech-to-Text)"),
             ("pyttsx3", "Text-to-speech", "Read Aloud entries & 365 quotes (0.75x)"),
             ("Pygame", "Dual-Track Audio", "App BGM + golden-brown.mp3 Quote Narration Music"),
-            ("Matplotlib", "Charts and analytics", "Personality-themed Insights radar"),
-            ("JSON / Quotes DB", "Local data storage", "365+ quotes & data/journal_data.json")
+            ("Matplotlib", "Charts and analytics", "Personality-themed Insights radar & Energy Waveform"),
+            ("JSON / Quotes DB", "Local data storage", "365+ quotes, settings.json & pet storage")
         ]
 
         for i, (lib, purp, where) in enumerate(rows, start=1):
@@ -1970,6 +2114,53 @@ class AboutScreen(BaseScreen):
         else:
             self.quote_preview_btn.config(text="[ ▶ TEST QUOTE BGM ]")
 
+    def _on_toggle_pet_sleep(self):
+        self.controller.toggle_pet_sleep()
+        self.refresh_pet_ui()
+
+    def _on_pet_type_change(self, event=None):
+        val = self.pet_combo.get()
+        self.controller.pet_manager.set_pet_type(val)
+        self.refresh_pet_ui()
+
+    def _on_choose_custom_pet_gif(self):
+        fpath = filedialog.askopenfilename(
+            title="Select Pet Animation GIF (*.gif)",
+            filetypes=[("GIF Animations", "*.gif"), ("All Files", "*.*")]
+        )
+        if fpath:
+            ok, msg = self.controller.pet_manager.load_custom_gif(fpath)
+            if ok:
+                self.pet_combo.set("Custom GIF")
+                self.refresh_pet_ui()
+                messagebox.showinfo("Pet Updated", msg)
+            else:
+                messagebox.showerror("Invalid File", msg)
+
+    def _on_pet_speed_change(self, val):
+        spd = int(float(val))
+        self.controller.pet_manager.set_speed(spd)
+        self.pet_speed_lbl.config(text=f"🏃 SLIDE SPEED: {spd} PX / STEP")
+
+    def refresh_pet_ui(self):
+        t = self.theme
+        is_sleeping = self.controller.pet_manager.is_sleeping
+        if hasattr(self, "pet_status_lbl"):
+            self.pet_status_lbl.config(
+                text="STATUS: 🐾 ACTIVE (SLIDING ACROSS SCREEN)" if not is_sleeping else "STATUS: 💤 SLEEPING (HIDDEN)",
+                fg=t["accent_green"] if not is_sleeping else t["text_muted"]
+            )
+        if hasattr(self, "pet_sleep_btn"):
+            self.pet_sleep_btn.config(
+                text="[ 💤 MAKE PET SLEEP ]" if not is_sleeping else "[ 🐾 WAKE UP COMPANION ]",
+                fg=t["accent_gold"] if not is_sleeping else t["accent_primary"]
+            )
+        if hasattr(self, "pet_file_lbl"):
+            path = self.controller.pet_manager.get_resolved_path() or "default_pet.gif"
+            self.pet_file_lbl.config(text=f">> ACTIVE MEDIA: {os.path.basename(path)}")
+        if hasattr(self, "pet_combo"):
+            self.pet_combo.set(self.controller.pet_manager.pet_type)
+
     def apply_theme(self):
         t = self.theme
         self.configure(bg=t["bg_main"])
@@ -1991,6 +2182,15 @@ class AboutScreen(BaseScreen):
         self.quote_track_lbl.configure(fg=t["accent_gold"], bg=t["bg_inner"])
         self.quote_change_btn.configure(bg=t["bg_card"], fg=t["accent_secondary"])
         self.quote_preview_btn.configure(bg=t["bg_card"], fg=t["accent_gold"])
+
+        if hasattr(self, "pet_card"):
+            self.pet_card.configure(bg=t["bg_inner"])
+            self.pet_title.configure(fg=t["accent_gold"], bg=t["bg_inner"])
+            self.pet_left_box.configure(bg=t["bg_inner"])
+            self.pet_right_box.configure(bg=t["bg_inner"])
+            self.pet_sleep_btn.configure(bg=t["bg_card"])
+            self.pet_gif_btn.configure(bg=t["bg_card"], fg=t["accent_primary"])
+            self.refresh_pet_ui()
 
         self.pers_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
         self.pers_frame.configure(bg=t["bg_inner"])

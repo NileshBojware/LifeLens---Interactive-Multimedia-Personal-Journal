@@ -13,6 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 IMAGES_DIR = os.path.join(DATA_DIR, "images")
 DATA_FILE = os.path.join(DATA_DIR, "journal_data.json")
+PETS_DIR = os.path.join(DATA_DIR, "pets")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
 # =====================================================================
@@ -214,6 +215,57 @@ def set_audio_settings(app_bgm_vol=None, quote_bgm_vol=None, quote_bgm_track=Non
         return False
 
 
+def get_pet_settings():
+    """Retrieve saved pet settings: sleep state, pet type, custom GIF path, speed."""
+    ensure_data_directories()
+    defaults = {
+        "pet_sleeping": False,
+        "pet_type": "Pixel Cyber Cat",
+        "pet_custom_path": "",
+        "pet_speed": 3
+    }
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                return {
+                    "pet_sleeping": bool(cfg.get("pet_sleeping", False)),
+                    "pet_type": cfg.get("pet_type", "Pixel Cyber Cat"),
+                    "pet_custom_path": cfg.get("pet_custom_path", ""),
+                    "pet_speed": int(cfg.get("pet_speed", 3))
+                }
+        except Exception:
+            pass
+    return defaults
+
+
+def set_pet_settings(pet_sleeping=None, pet_type=None, pet_custom_path=None, pet_speed=None):
+    """Persist pet settings in settings.json."""
+    ensure_data_directories()
+    try:
+        cfg = {}
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+            except Exception:
+                cfg = {}
+        if pet_sleeping is not None:
+            cfg["pet_sleeping"] = bool(pet_sleeping)
+        if pet_type is not None:
+            cfg["pet_type"] = str(pet_type)
+        if pet_custom_path is not None:
+            cfg["pet_custom_path"] = str(pet_custom_path)
+        if pet_speed is not None:
+            cfg["pet_speed"] = max(1, min(12, int(pet_speed)))
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving pet settings: {e}")
+        return False
+
+
 # Moods and their associated emojis and theme colors
 MOOD_MAP = {
     "Happy": {"emoji": "😊", "color": "#F59E0B", "energy_avg": 8},
@@ -239,10 +291,11 @@ ACTIVITIES = [
 
 
 def ensure_data_directories():
-    """Ensure data/ and data/images/ directories exist."""
+    """Ensure data/, data/images/, and data/pets/ directories exist."""
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
         os.makedirs(IMAGES_DIR, exist_ok=True)
+        os.makedirs(PETS_DIR, exist_ok=True)
     except Exception as e:
         print(f"Error creating directories: {e}")
 

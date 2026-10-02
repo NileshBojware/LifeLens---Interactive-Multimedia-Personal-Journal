@@ -1,7 +1,11 @@
 {
-    "personality": "Deep Scholar",
-    "app_bgm_vol": 0.47,
-    "quote_bgm_vol": 0.3,
+    "personality": "Eternal Cosmos",
+    "app_bgm_vol": 0.91,
+    "quote_bgm_vol": 0.43,
     "quote_bgm_track": "golden-brown.mp3",
-    "app_bgm_track": "interstellar_stay.mp3"
+    "app_bgm_track": "interstellar_stay.mp3",
+    "pet_sleeping": false,
+    "pet_type": "Custom GIF",
+    "pet_speed": 3,
+    "pet_custom_path": "C:\\Users\\niles\\Downloads\\PIMVL\\LifeLens\\data\\pets\\custom_pet_1790607308.gif"
 }

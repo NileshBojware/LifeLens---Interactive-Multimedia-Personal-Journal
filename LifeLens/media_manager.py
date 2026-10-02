@@ -12,7 +12,7 @@ import threading
 from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox
-from PIL import Image, ImageTk, ImageEnhance, ImageFilter, ImageDraw
+from PIL import Image, ImageTk, ImageSequence, ImageEnhance, ImageFilter, ImageDraw
 
 try:
     import cv2
@@ -26,7 +26,13 @@ try:
 except ImportError:
     PYGAME_AVAILABLE = False
 
-from data_manager import get_audio_settings, set_audio_settings
+from data_manager import (
+    get_audio_settings,
+    set_audio_settings,
+    get_pet_settings,
+    set_pet_settings,
+    PETS_DIR,
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -750,3 +756,299 @@ class AmbientAudioManager:
                     pass
             self.is_playing = False
             self.is_quote_previewing = False
+
+
+# =====================================================================
+# 6. ANIMATED PET MEDIA OBJECT & PET COMPANION MANAGER
+# =====================================================================
+
+class PetMediaObject:
+    """
+    Modular Media Object for Animated Pet GIFs and Sprites.
+    Handles multi-frame GIF extraction, RGBA transparency, scaling,
+    frame timing, and Tkinter PhotoImage caching.
+    You can replace or point to any GIF file and it automatically works.
+    """
+
+    def __init__(self, gif_path=None, target_height=42):
+        self.target_height = target_height
+        self.frames = []           # PIL RGBA images
+        self.tk_frames = []        # ImageTk.PhotoImage
+        self.frame_durations = []  # ms
+        self.width = 48
+        self.height = 42
+        self.filepath = None
+        self.is_loaded = False
+        
+        if gif_path:
+            self.load(gif_path)
+
+    def load(self, gif_path):
+        """Load any standard .gif or static image file."""
+        self.frames.clear()
+        self.tk_frames.clear()
+        self.frame_durations.clear()
+        self.filepath = gif_path
+        self.is_loaded = False
+
+        if not gif_path or not os.path.exists(gif_path):
+            return False
+
+        try:
+            with Image.open(gif_path) as img:
+                resample_mode = getattr(Image, "Resampling", Image).NEAREST
+                for frame in ImageSequence.Iterator(img):
+                    rgba = frame.convert("RGBA")
+                    orig_w, orig_h = rgba.size
+                    if orig_h > 0:
+                        ratio = float(self.target_height) / float(orig_h)
+                        new_w = max(16, int(orig_w * ratio))
+                        new_h = self.target_height
+                    else:
+                        new_w, new_h = 48, self.target_height
+                    
+                    resized = rgba.resize((new_w, new_h), resample_mode)
+                    self.frames.append(resized)
+                    
+                    dur = frame.info.get("duration", 110)
+                    if dur <= 10:
+                        dur = 110
+                    self.frame_durations.append(dur)
+
+            if self.frames:
+                self.width = self.frames[0].width
+                self.height = self.frames[0].height
+                self.is_loaded = True
+                self._build_tk_frames()
+                return True
+        except Exception as e:
+            print(f"Error loading pet media GIF {gif_path}: {e}")
+        return False
+
+    def _build_tk_frames(self):
+        """Convert PIL frames to Tkinter PhotoImages when Tk root is active."""
+        self.tk_frames.clear()
+        try:
+            for img in self.frames:
+                self.tk_frames.append(ImageTk.PhotoImage(img))
+        except Exception:
+            pass
+
+    def get_num_frames(self):
+        return len(self.frames)
+
+    def get_frame(self, index):
+        if not self.tk_frames and self.frames:
+            self._build_tk_frames()
+        if not self.tk_frames:
+            return None
+        return self.tk_frames[index % len(self.tk_frames)]
+
+    def get_duration(self, index):
+        if not self.frame_durations:
+            return 110
+        return self.frame_durations[index % len(self.frame_durations)]
+
+
+def create_sample_pet_assets():
+    """Generates 3 default retro 8-bit animated pet GIFs programmatically."""
+    os.makedirs(PETS_DIR, exist_ok=True)
+
+    cat_path = os.path.join(PETS_DIR, "pixel_cat.gif")
+    dog_path = os.path.join(PETS_DIR, "pixel_dog.gif")
+    dino_path = os.path.join(PETS_DIR, "pixel_dino.gif")
+    default_path = os.path.join(PETS_DIR, "default_pet.gif")
+
+    # 1. Pixel Cyber Cat
+    if not os.path.exists(cat_path):
+        try:
+            frames = []
+            for i in range(4):
+                im = Image.new("RGBA", (36, 30), (0, 0, 0, 0))
+                d = ImageDraw.Draw(im)
+                # Body
+                d.rectangle([8, 10, 26, 22], fill=(0, 240, 255, 255))
+                # Head
+                d.rectangle([22, 4, 32, 16], fill=(0, 240, 255, 255))
+                # Ears
+                d.polygon([(23, 4), (25, 0), (27, 4)], fill=(255, 0, 127, 255))
+                d.polygon([(29, 4), (31, 0), (33, 4)], fill=(255, 0, 127, 255))
+                # Eye
+                d.point((29, 8), fill=(255, 230, 0, 255))
+                d.point((30, 8), fill=(255, 230, 0, 255))
+                # Walking Legs animation
+                leg_step = 2 if i % 2 == 0 else -2
+                d.rectangle([10, 22, 13, 27 + leg_step], fill=(255, 0, 127, 255))
+                d.rectangle([21, 22, 24, 27 - leg_step], fill=(255, 0, 127, 255))
+                # Swishing Tail
+                tail_offsets = [0, -3, -5, -2]
+                ty = 14 + tail_offsets[i]
+                d.line([(8, 16), (2, ty), (0, ty - 2)], fill=(0, 240, 255, 255), width=2)
+                frames.append(im)
+            frames[0].save(cat_path, save_all=True, append_images=frames[1:], duration=120, loop=0, disposal=2)
+        except Exception as e:
+            print(f"Error creating pixel cat asset: {e}")
+
+    # 2. 8-Bit Space Dog
+    if not os.path.exists(dog_path):
+        try:
+            frames = []
+            for i in range(4):
+                im = Image.new("RGBA", (36, 30), (0, 0, 0, 0))
+                d = ImageDraw.Draw(im)
+                # Body
+                d.rectangle([8, 11, 26, 22], fill=(255, 180, 50, 255))
+                # Space Helmet Head
+                d.ellipse([20, 3, 34, 17], outline=(0, 240, 255, 255), width=2)
+                d.rectangle([22, 5, 31, 15], fill=(255, 220, 120, 255))
+                # Snout
+                d.rectangle([29, 10, 34, 14], fill=(255, 140, 30, 255))
+                d.point((33, 11), fill=(0, 0, 0, 255))
+                # Eye
+                d.point((27, 8), fill=(0, 0, 0, 255))
+                # Ears/Antenna
+                d.line([(26, 3), (26, 0)], fill=(0, 240, 255, 255), width=2)
+                d.point((26, 0), fill=(255, 0, 127, 255))
+                # Trotting Legs
+                leg_step = 3 if (i == 0 or i == 2) else -2
+                d.rectangle([10, 22, 13, 27 + leg_step], fill=(0, 240, 255, 255))
+                d.rectangle([21, 22, 24, 27 - leg_step], fill=(0, 240, 255, 255))
+                # Wagging Tail
+                tail_x = 4 + (2 if i % 2 == 0 else -2)
+                d.line([(8, 14), (tail_x, 8)], fill=(255, 180, 50, 255), width=2)
+                frames.append(im)
+            frames[0].save(dog_path, save_all=True, append_images=frames[1:], duration=120, loop=0, disposal=2)
+        except Exception as e:
+            print(f"Error creating pixel dog asset: {e}")
+
+    # 3. Retro Dino
+    if not os.path.exists(dino_path):
+        try:
+            frames = []
+            for i in range(4):
+                im = Image.new("RGBA", (36, 30), (0, 0, 0, 0))
+                d = ImageDraw.Draw(im)
+                # Head & Jaw
+                d.rectangle([18, 2, 32, 12], fill=(80, 220, 120, 255))
+                d.rectangle([24, 8, 33, 13], fill=(80, 220, 120, 255))
+                d.point((26, 5), fill=(0, 0, 0, 255))
+                # Teeth
+                d.point((28, 13), fill=(255, 255, 255, 255))
+                d.point((31, 13), fill=(255, 255, 255, 255))
+                # Body & Tiny Arms
+                d.rectangle([10, 10, 24, 22], fill=(80, 220, 120, 255))
+                d.rectangle([23, 14, 26, 17], fill=(50, 160, 80, 255))
+                # Back Spikes
+                d.polygon([(12, 10), (14, 7), (16, 10)], fill=(255, 0, 127, 255))
+                d.polygon([(17, 10), (19, 7), (21, 10)], fill=(255, 0, 127, 255))
+                # Tail
+                tail_y = 12 + (i % 2)
+                d.polygon([(10, 14), (10, 19), (2, tail_y)], fill=(80, 220, 120, 255))
+                # Stepping Feet
+                foot_step = 2 if i % 2 == 0 else -2
+                d.rectangle([12, 22, 15, 27 + foot_step], fill=(50, 160, 80, 255))
+                d.rectangle([18, 22, 21, 27 - foot_step], fill=(50, 160, 80, 255))
+                frames.append(im)
+            frames[0].save(dino_path, save_all=True, append_images=frames[1:], duration=120, loop=0, disposal=2)
+        except Exception as e:
+            print(f"Error creating pixel dino asset: {e}")
+
+    # 4. Default Pet copy
+    if not os.path.exists(default_path) and os.path.exists(cat_path):
+        try:
+            with open(cat_path, "rb") as rf, open(default_path, "wb") as wf:
+                wf.write(rf.read())
+        except Exception:
+            pass
+
+
+class PetCompanionManager:
+    """
+    Manages the active pet companion media, movement speed, sleep state,
+    and pet switching catalog. Works with ANY .gif file.
+    """
+
+    PRESETS = {
+        "Pixel Cyber Cat": "pixel_cat.gif",
+        "8-Bit Space Dog": "pixel_dog.gif",
+        "Retro Dino": "pixel_dino.gif",
+        "Custom GIF": "default_pet.gif"
+    }
+
+    def __init__(self, target_height=42):
+        self.target_height = target_height
+        create_sample_pet_assets()
+        
+        cfg = get_pet_settings()
+        self.is_sleeping = bool(cfg.get("pet_sleeping", False))
+        self.pet_type = cfg.get("pet_type", "Pixel Cyber Cat")
+        self.custom_path = cfg.get("pet_custom_path", "")
+        self.speed = int(cfg.get("pet_speed", 3))
+
+        self.media = PetMediaObject(target_height=self.target_height)
+        self.load_active_pet()
+
+    def get_resolved_path(self):
+        if self.pet_type == "Custom GIF" and self.custom_path and os.path.exists(self.custom_path):
+            return self.custom_path
+        
+        fname = self.PRESETS.get(self.pet_type, "pixel_cat.gif")
+        preset_file = os.path.join(PETS_DIR, fname)
+        if os.path.exists(preset_file):
+            return preset_file
+        
+        default_file = os.path.join(PETS_DIR, "default_pet.gif")
+        if os.path.exists(default_file):
+            return default_file
+        
+        return None
+
+    def load_active_pet(self):
+        path = self.get_resolved_path()
+        if path:
+            return self.media.load(path)
+        return False
+
+    def toggle_sleep(self):
+        """Toggle sleep state across all pets."""
+        self.is_sleeping = not self.is_sleeping
+        set_pet_settings(pet_sleeping=self.is_sleeping)
+        status_text = "💤 Pet is now sleeping (hidden)" if self.is_sleeping else "🐾 Pet is awake and sliding!"
+        return self.is_sleeping, status_text
+
+    def set_sleeping(self, sleeping: bool):
+        self.is_sleeping = bool(sleeping)
+        set_pet_settings(pet_sleeping=self.is_sleeping)
+
+    def set_pet_type(self, pet_type_name):
+        self.pet_type = pet_type_name
+        set_pet_settings(pet_type=self.pet_type)
+        self.load_active_pet()
+
+    def load_custom_gif(self, file_path):
+        """Load and set a custom user-provided GIF file."""
+        if not file_path or not os.path.exists(file_path):
+            return False, "File does not exist."
+        
+        try:
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext != ".gif":
+                return False, "Selected file must be a .gif animation."
+            
+            dest_name = f"custom_pet_{int(datetime.now().timestamp())}.gif"
+            dest_path = os.path.join(PETS_DIR, dest_name)
+            with open(file_path, "rb") as rf, open(dest_path, "wb") as wf:
+                wf.write(rf.read())
+            
+            self.pet_type = "Custom GIF"
+            self.custom_path = dest_path
+            set_pet_settings(pet_type="Custom GIF", pet_custom_path=dest_path)
+            self.media.load(dest_path)
+            return True, f"Loaded custom GIF: {os.path.basename(file_path)}"
+        except Exception as e:
+            return False, f"Failed to load GIF: {e}"
+
+    def set_speed(self, speed_val):
+        self.speed = max(1, min(12, int(speed_val)))
+        set_pet_settings(pet_speed=self.speed)
+

@@ -1,5 +1,35 @@
 [
     {
+        "id": "244b097c-052a-4ad1-9fb0-7eb470994316",
+        "date": "2026-10-02",
+        "mood": "Neutral",
+        "energy": 8,
+        "activity": "Relaxation",
+        "text": "hii",
+        "image": "data/images/pixel_entry_20261002_114537_188312.png",
+        "is_sample": false
+    },
+    {
+        "id": "daaf7277-af4f-4601-8284-6b527d388c0a",
+        "date": "2026-09-30",
+        "mood": "Tired",
+        "energy": 5,
+        "activity": "Reading",
+        "text": "I am sitting with om kadam",
+        "image": "data/images/pixel_entry_20260930_202953_082947.png",
+        "is_sample": false
+    },
+    {
+        "id": "3ef1b8e9-a4d2-4cfe-be89-047851f7f532",
+        "date": "2026-09-28",
+        "mood": "Calm",
+        "energy": 8,
+        "activity": "Relaxation",
+        "text": "ya , imean its alright , not that bad .... since iam at home",
+        "image": "data/images/pixel_entry_20260928_191017_085740.png",
+        "is_sample": false
+    },
+    {
         "id": "b131ecb8-9351-497a-b07d-7ce5be9408d1",
         "date": "2026-09-27",
         "mood": "Good",

@@ -12,6 +12,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+import time
 from data_manager import (
     PERSONALITY_THEMES,
     get_active_personality,
@@ -19,7 +20,11 @@ from data_manager import (
     load_entries,
     ensure_data_directories,
 )
-from media_manager import create_sample_visual_assets, AmbientAudioManager
+from media_manager import (
+    create_sample_visual_assets,
+    AmbientAudioManager,
+    PetCompanionManager,
+)
 from dashboard import (
     DashboardScreen,
     NewEntryScreen,
@@ -50,14 +55,17 @@ class LifeLensApp(tk.Tk):
         create_sample_visual_assets()
         load_entries()
         self.ambient_manager = AmbientAudioManager()
+        self.pet_manager = PetCompanionManager(target_height=36)
 
         self._configure_styles()
 
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=0)
 
         self._build_sidebar()
         self._build_content_area()
+        self._build_pet_runner()
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.navigate_to("dashboard")
@@ -206,6 +214,24 @@ class LifeLensApp(tk.Tk):
         self.bottom_frame = tk.Frame(self.sidebar, bg=t["bg_sidebar"], padx=10, pady=14)
         self.bottom_frame.pack(side="bottom", fill="x")
 
+        # Pet Companion Quick Sleep/Wake Button
+        is_sleeping = self.pet_manager.is_sleeping
+        self.pet_toggle_btn = tk.Button(
+            self.bottom_frame,
+            text="[ 🐾 PET: ACTIVE ]" if not is_sleeping else "[ 💤 PET: SLEEPING ]",
+            font=(FONT_MONO, 7, "bold"),
+            bg=t["bg_inner"],
+            fg=t["accent_primary"] if not is_sleeping else t["text_muted"],
+            activebackground=t["bg_card"],
+            activeforeground=t["accent_gold"],
+            relief="ridge",
+            bd=1,
+            cursor="hand2",
+            pady=3,
+            command=self.toggle_pet_sleep
+        )
+        self.pet_toggle_btn.pack(fill="x", pady=(0, 6))
+
         self.status_box = tk.Frame(self.bottom_frame, bg=t["bg_inner"], bd=1, relief="solid", padx=6, pady=6)
         self.status_box.pack(fill="x")
 
@@ -266,6 +292,175 @@ class LifeLensApp(tk.Tk):
 
         self.current_screen_name = None
 
+    def _build_pet_runner(self):
+        """
+        Builds a native in-window retro arcade pet companion footer track.
+        Zero multi-window conflicts, zero Win32 DWM CPU load, 100% stable & smooth!
+        """
+        t = self.theme
+        self.pet_track_frame = tk.Frame(self, bg=t["bg_sidebar"], height=38, bd=1, relief="ridge")
+        self.pet_track_frame.grid(row=1, column=0, columnspan=2, sticky="ew")
+        self.pet_track_frame.columnconfigure(1, weight=1)
+
+        # Left Pet Badge
+        self.pet_badge_frame = tk.Frame(self.pet_track_frame, bg=t["bg_sidebar"], padx=8, pady=3)
+        self.pet_badge_frame.grid(row=0, column=0, sticky="w")
+
+        self.pet_badge_lbl = tk.Label(
+            self.pet_badge_frame,
+            text="🐾 COMPANION:",
+            font=(FONT_MONO, 7, "bold"),
+            fg=t["accent_gold"],
+            bg=t["bg_sidebar"]
+        )
+        self.pet_badge_lbl.pack(side="left")
+
+        # Center Running Canvas
+        self.pet_canvas = tk.Canvas(
+            self.pet_track_frame,
+            bg=t["bg_inner"],
+            height=32,
+            highlightthickness=1,
+            highlightbackground=t["border"],
+            bd=0,
+            cursor="hand2"
+        )
+        self.pet_canvas.grid(row=0, column=1, sticky="ew", padx=6, pady=2)
+
+        # Allow clicking directly on the canvas to pet the companion or wake/sleep
+        self.pet_canvas.bind("<Button-1>", self._on_pet_canvas_click)
+
+        # Right Controls
+        self.pet_ctrl_frame = tk.Frame(self.pet_track_frame, bg=t["bg_sidebar"], padx=8, pady=2)
+        self.pet_ctrl_frame.grid(row=0, column=2, sticky="e")
+
+        self.pet_quick_toggle = tk.Button(
+            self.pet_ctrl_frame,
+            text="[ 💤 SLEEP ]" if not self.pet_manager.is_sleeping else "[ 🐾 WAKE ]",
+            font=(FONT_MONO, 7, "bold"),
+            bg=t["bg_inner"],
+            fg=t["accent_primary"] if not self.pet_manager.is_sleeping else t["accent_gold"],
+            relief="raised",
+            bd=1,
+            cursor="hand2",
+            padx=6,
+            pady=1,
+            command=self.toggle_pet_sleep
+        )
+        self.pet_quick_toggle.pack(side="right")
+
+        self.pet_x = -40.0
+        self.pet_frame_idx = 0
+        self.pet_last_frame_time = time.time()
+        self.pet_toast_timer = 0
+        self.pet_toast_text = ""
+
+        self._animate_pet()
+
+    def _on_pet_canvas_click(self, event):
+        if self.pet_manager.is_sleeping:
+            self.toggle_pet_sleep()
+        else:
+            import random
+            quotes = ["💖 Purr~", "⭐ Happy!", "✨ Quest On!", "🐾 Level Up!", "🌟 Woof!", "💫 Good day!"]
+            self.pet_toast_text = random.choice(quotes)
+            self.pet_toast_timer = 45
+
+    def _animate_pet(self):
+        """Animates pet walking smoothly across the arcade footer track."""
+        try:
+            if not self.winfo_exists():
+                return
+        except Exception:
+            return
+
+        t = self.theme
+        is_sleeping = self.pet_manager.is_sleeping
+        num_frames = self.pet_manager.media.get_num_frames()
+
+        canvas_w = self.pet_canvas.winfo_width()
+        if canvas_w < 100:
+            canvas_w = 900
+
+        if is_sleeping or num_frames == 0:
+            self.pet_canvas.delete("all")
+            self.pet_canvas.create_text(
+                canvas_w // 2,
+                16,
+                text="[ 💤 PET IS SLEEPING PEACEFULLY — CLICK TO WAKE ]",
+                font=(FONT_MONO, 7, "bold"),
+                fill=t["text_muted"],
+                tags="sleeping_text"
+            )
+            self.after(250, self._animate_pet)
+            return
+
+        pet_w = self.pet_manager.media.width or 36
+
+        # Move across canvas
+        self.pet_x += self.pet_manager.speed
+        if self.pet_x > canvas_w + 30:
+            self.pet_x = -float(pet_w) - 20.0
+
+        # Advance frame
+        now = time.time()
+        dur_ms = self.pet_manager.media.get_duration(self.pet_frame_idx) or 110
+        if now - self.pet_last_frame_time >= (dur_ms / 1000.0):
+            self.pet_frame_idx = (self.pet_frame_idx + 1) % num_frames
+            self.pet_last_frame_time = now
+
+        current_frame = self.pet_manager.media.get_frame(self.pet_frame_idx)
+        self.pet_canvas.delete("all")
+
+        if current_frame:
+            self.pet_canvas.create_image(
+                int(self.pet_x),
+                16,
+                image=current_frame,
+                anchor="center",
+                tags="pet_sprite"
+            )
+
+        # Floating speech bubble / toast
+        if self.pet_toast_timer > 0:
+            self.pet_toast_timer -= 1
+            if self.pet_toast_text:
+                self.pet_canvas.create_text(
+                    int(self.pet_x) + 38,
+                    12,
+                    text=self.pet_toast_text,
+                    font=(FONT_MONO, 7, "bold"),
+                    fill=t.get("accent_gold", "#ffd700"),
+                    tags="pet_toast"
+                )
+
+        self.after(35, self._animate_pet)
+
+    def toggle_pet_sleep(self):
+        """Toggles sleep state across all pets (making pet sleep/disappear or wake)."""
+        is_sleeping, msg = self.pet_manager.toggle_sleep()
+        t = self.theme
+        if hasattr(self, "pet_toggle_btn"):
+            self.pet_toggle_btn.config(
+                text="[ 💤 PET: SLEEPING ]" if is_sleeping else "[ 🐾 PET: ACTIVE ]",
+                fg=t["text_muted"] if is_sleeping else t["accent_primary"]
+            )
+        if hasattr(self, "pet_quick_toggle"):
+            self.pet_quick_toggle.config(
+                text="[ 🐾 WAKE ]" if is_sleeping else "[ 💤 SLEEP ]",
+                fg=t["accent_gold"] if is_sleeping else t["accent_primary"]
+            )
+
+        self.pet_toast_text = "💤 Zzz..." if is_sleeping else "🐾 Walking..."
+        self.pet_toast_timer = 40
+
+        # Update Settings screen if open
+        if hasattr(self, "screens") and "about" in self.screens:
+            try:
+                self.screens["about"].refresh_pet_ui()
+            except Exception:
+                pass
+
     def apply_personality_theme(self, theme_name):
         """Applies a new personality theme dynamically across all UI components."""
         if theme_name not in PERSONALITY_THEMES:
@@ -293,6 +488,25 @@ class LifeLensApp(tk.Tk):
         self.status_box.configure(bg=t["bg_inner"])
         self.status_lbl.configure(fg=t["accent_green"], bg=t["bg_inner"])
         self.mode_lbl.configure(fg=t["text_muted"], bg=t["bg_inner"])
+
+        if hasattr(self, "pet_toggle_btn"):
+            is_sleeping = self.pet_manager.is_sleeping
+            self.pet_toggle_btn.configure(
+                bg=t["bg_inner"],
+                fg=t["text_muted"] if is_sleeping else t["accent_primary"]
+            )
+
+        if hasattr(self, "pet_track_frame"):
+            self.pet_track_frame.configure(bg=t["bg_sidebar"])
+            self.pet_badge_frame.configure(bg=t["bg_sidebar"])
+            self.pet_badge_lbl.configure(fg=t["accent_gold"], bg=t["bg_sidebar"])
+            self.pet_canvas.configure(bg=t["bg_inner"], highlightbackground=t["border"])
+            self.pet_ctrl_frame.configure(bg=t["bg_sidebar"])
+            is_sleeping = self.pet_manager.is_sleeping
+            self.pet_quick_toggle.configure(
+                bg=t["bg_inner"],
+                fg=t["accent_gold"] if is_sleeping else t["accent_primary"]
+            )
 
         # Update Nav Buttons
         for k, btn in self.nav_buttons.items():
@@ -341,3 +555,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

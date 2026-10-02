@@ -21,6 +21,13 @@ except ImportError:
     pyttsx3 = None
     PYTTSX3_AVAILABLE = False
 
+try:
+    import pythoncom
+    PYTHONCOM_AVAILABLE = True
+except ImportError:
+    pythoncom = None
+    PYTHONCOM_AVAILABLE = False
+
 
 class VoiceInputManager:
     """Manages microphone recording and speech-to-text recognition."""
@@ -140,7 +147,15 @@ class TextToSpeechManager:
             self._is_speaking = True
 
         def _tts_worker():
+            com_initialized = False
             try:
+                if PYTHONCOM_AVAILABLE and pythoncom:
+                    try:
+                        pythoncom.CoInitialize()
+                        com_initialized = True
+                    except Exception:
+                        pass
+
                 if on_start:
                     on_start()
 
@@ -176,6 +191,11 @@ class TextToSpeechManager:
                 if on_error:
                     on_error(f"Text-to-Speech encounter: {e}")
             finally:
+                if com_initialized and PYTHONCOM_AVAILABLE and pythoncom:
+                    try:
+                        pythoncom.CoUninitialize()
+                    except Exception:
+                        pass
                 with self._lock:
                     self._is_speaking = False
                 if on_finish:
