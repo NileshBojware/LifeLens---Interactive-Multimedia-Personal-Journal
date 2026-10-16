@@ -1,6 +1,6 @@
 # LifeLens ★ Retro 8-Bit Multimedia Journal (Eternal Cosmos & Dual Mixer Edition)
 
-> **A retro pixel-art desktop personal journal application featuring 6 dynamic personality color themes (including pitch-black retro space game *Eternal Cosmos*), Hans Zimmer's Interstellar S.T.A.Y ambient BGM, golden-brown.mp3 quote narration music, dual-track background audio mixer, live webcam snapshot capture, 365+ psychological quotes, 8-bit image filters, and speech synthesis.**
+> **A retro pixel-art desktop personal journal application featuring 8 dynamic personality color themes (including radiant non-dark light themes *Solar Daybreak* & *Sakura Blossom* and pitch-black *Eternal Cosmos*), Hans Zimmer's Interstellar S.T.A.Y ambient BGM, golden-brown.mp3 quote narration music, dual-track background audio mixer, live webcam snapshot capture, 365+ psychological quotes, 8-bit image filters, and speech synthesis.**
 
 ---
 
@@ -23,8 +23,10 @@ Control and customize all audio in **Specs / Themes / Audio Mixer** (`AboutScree
 - **`🎙️ QUOTE READING BGM` (0% – 100%):** Volume slider, active file display (`golden-brown.mp3`), `[ 📁 CHANGE QUOTE MUSIC ]` file picker, and `[ ▶ TEST QUOTE BGM ]` preview button.
 - All volume levels and chosen audio track paths are automatically saved in `data/settings.json`.
 
-### 4. 🎭 6 Personality Themes (Featuring 🚀 Eternal Cosmos)
+### 4. 🎭 8 Personality Themes (Featuring ☀️ Solar Daybreak & 🌸 Sakura Blossom Light Themes)
 Switch on the fly between:
+- **☀️ Solar Daybreak** *(Light Theme)*: Luminous, high-clarity daylight theme with brilliant sky azure, royal iris, deep amber gold, and forest emerald on crisp slate-white and pure white cards. (Non-dark clean colors)
+- **🌸 Sakura Blossom** *(Light Theme)*: Serene spring bloom pastel theme with vibrant rose ruby, blossom orchid, terracotta sunrise, and spring mint on soft blush porcelain. (Non-dark pastel colors)
 - **🚀 Eternal Cosmos**: Deep pitch-black retro space game with supernova cyan, pulsar gold, and nebula violet starlight.
 - **🎮 Cyber Gamer**: Neon glitch cyan & arcade magenta retro cyberpunk.
 - **🌿 Zen Sage**: Mindful emerald jade & matcha forest tranquility.

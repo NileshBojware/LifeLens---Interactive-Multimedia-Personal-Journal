@@ -20,6 +20,42 @@ SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 # 5 Distinct Personality Color Themes
 # =====================================================================
 PERSONALITY_THEMES = {
+    "Solar Daybreak": {
+        "name": "Solar Daybreak",
+        "emoji": "☀️",
+        "tagline": "VIVID DAYLIGHT // CRISP SUNLIT CLARITY",
+        "bg_main": "#f8fafc",             # Clean Slate Daylight White
+        "bg_card": "#ffffff",             # Pure Bright White Card
+        "bg_inner": "#f1f5f9",            # Soft Frosted Inner Canvas
+        "bg_sidebar": "#ffffff",          # Crisp Light Modern Sidebar
+        "accent_primary": "#0284c7",      # Brilliant Sky Azure
+        "accent_secondary": "#7c3aed",    # Vivid Royal Iris
+        "accent_gold": "#b45309",         # Deep Amber Gold (High contrast on light)
+        "accent_green": "#15803d",        # Vibrant Forest Emerald
+        "accent_text": "#ffffff",         # Crisp White text on vibrant accent buttons
+        "text_main": "#0f172a",           # Crisp Dark Slate text
+        "text_muted": "#64748b",          # Slate-500 Muted text
+        "border": "#cbd5e1",              # Clean Slate-300 Border
+        "chart_colors": ["#0284c7", "#7c3aed", "#b45309", "#15803d", "#db2777", "#ea580c", "#0891b2"]
+    },
+    "Sakura Blossom": {
+        "name": "Sakura Blossom",
+        "emoji": "🌸",
+        "tagline": "SPRING BLOOM // PASTEL PETAL SERENITY",
+        "bg_main": "#fdf4f5",             # Soft Blush Porcelain Light
+        "bg_card": "#ffffff",             # Pure Crisp White Card
+        "bg_inner": "#fae8eb",            # Delicate Pastel Rose Light Surface
+        "bg_sidebar": "#fff0f3",          # Warm Blossom Sidebar
+        "accent_primary": "#e11d48",      # Vibrant Rose Ruby
+        "accent_secondary": "#9333ea",    # Blossom Orchid Violet
+        "accent_gold": "#c2410c",         # Terracotta Sunrise
+        "accent_green": "#059669",        # Fresh Spring Mint Leaf
+        "accent_text": "#ffffff",         # Crisp White text on vibrant accent buttons
+        "text_main": "#1e1b1e",           # Deep Plum Charcoal text
+        "text_muted": "#836e7a",          # Muted Mauve Slate text
+        "border": "#fbcfe8",              # Soft Pastel Rose Border
+        "chart_colors": ["#e11d48", "#9333ea", "#c2410c", "#059669", "#ec4899", "#d97706", "#2563eb"]
+    },
     "Cyber Gamer": {
         "name": "Cyber Gamer",
         "emoji": "🎮",
@@ -32,6 +68,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#ff007f",    # Arcade Magenta
         "accent_gold": "#ffd700",         # Coin Gold
         "accent_green": "#00ff66",        # 1-UP Green
+        "accent_text": "#000000",
         "text_main": "#f1f5f9",
         "text_muted": "#8e8db5",
         "border": "#3d3a68",
@@ -49,6 +86,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#74c69d",    # Matcha Mint
         "accent_gold": "#d8f3dc",         # Pale Leaf
         "accent_green": "#40916c",        # Pine Green
+        "accent_text": "#000000",
         "text_main": "#f0fff4",
         "text_muted": "#80b996",
         "border": "#2d6a4f",
@@ -66,6 +104,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#a855f7",    # Electric Violet
         "accent_gold": "#fbbf24",         # Amber Glow
         "accent_green": "#34d399",        # Aqua Paint
+        "accent_text": "#ffffff",
         "text_main": "#fdf4ff",
         "text_muted": "#b582be",
         "border": "#582963",
@@ -83,6 +122,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#818cf8",    # Indigo Starlight
         "accent_gold": "#facc15",         # Stellar Gold
         "accent_green": "#2dd4bf",        # Prism Teal
+        "accent_text": "#000000",
         "text_main": "#f0f9ff",
         "text_muted": "#8197be",
         "border": "#2b3f6c",
@@ -100,6 +140,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#f87171",    # Terracotta
         "accent_gold": "#fde047",         # Honey Cream
         "accent_green": "#a3e635",        # Olive Leaf
+        "accent_text": "#000000",
         "text_main": "#fffbeb",
         "text_muted": "#b8957c",
         "border": "#573a28",
@@ -117,6 +158,7 @@ PERSONALITY_THEMES = {
         "accent_secondary": "#bd00ff",    # Nebula Neon Violet
         "accent_gold": "#ffe600",         # Pulsar Star Gold
         "accent_green": "#00ff9d",        # Warp Drive Emerald
+        "accent_text": "#000000",
         "text_main": "#ffffff",           # Pure Star White
         "text_muted": "#7e84a3",          # Cosmic Dust Grey
         "border": "#1e1e38",              # Horizon Line

@@ -110,11 +110,11 @@ class DashboardScreen(BaseScreen):
         self.header.grid(row=0, column=0, sticky="ew", padx=24, pady=(16, 8))
         self.header.columnconfigure(0, weight=1)
 
-        title_box = tk.Frame(self.header, bg=self.theme["bg_main"])
-        title_box.grid(row=0, column=0, sticky="w")
+        self.title_box = tk.Frame(self.header, bg=self.theme["bg_main"])
+        self.title_box.grid(row=0, column=0, sticky="w")
 
         self.title_lbl = tk.Label(
-            title_box,
+            self.title_box,
             text=f"★ LIFELENS // {self.theme['name'].upper()} STATION ★",
             font=("Consolas", 15, "bold"),
             fg=self.theme["accent_primary"],
@@ -123,7 +123,7 @@ class DashboardScreen(BaseScreen):
         self.title_lbl.pack(anchor="w")
 
         self.subtitle_lbl = tk.Label(
-            title_box,
+            self.title_box,
             text=f">> {self.theme['tagline']}",
             font=FONT_RETRO_SMALL,
             fg=self.theme["text_muted"],
@@ -132,12 +132,12 @@ class DashboardScreen(BaseScreen):
         self.subtitle_lbl.pack(anchor="w", pady=(2, 0))
 
         # Right Header: Date + Personality Selector Dropdown
-        right_header = tk.Frame(self.header, bg=self.theme["bg_main"])
-        right_header.grid(row=0, column=1, sticky="e")
+        self.right_header = tk.Frame(self.header, bg=self.theme["bg_main"])
+        self.right_header.grid(row=0, column=1, sticky="e")
 
         today_str = datetime.now().strftime("%Y.%m.%d").upper()
         self.date_badge = tk.Label(
-            right_header,
+            self.right_header,
             text=f"[ 📅 {today_str} ]",
             font=FONT_RETRO_SMALL,
             fg=self.theme["accent_gold"],
@@ -149,12 +149,13 @@ class DashboardScreen(BaseScreen):
         )
         self.date_badge.pack(side="right", padx=(8, 0))
 
-        pers_box = tk.Frame(right_header, bg=self.theme["bg_main"])
-        pers_box.pack(side="right")
-        tk.Label(pers_box, text="THEME:", font=FONT_RETRO_SMALL, fg=self.theme["accent_primary"], bg=self.theme["bg_main"]).pack(side="left", padx=4)
+        self.pers_box = tk.Frame(self.right_header, bg=self.theme["bg_main"])
+        self.pers_box.pack(side="right")
+        self.pers_lbl = tk.Label(self.pers_box, text="THEME:", font=FONT_RETRO_SMALL, fg=self.theme["accent_primary"], bg=self.theme["bg_main"])
+        self.pers_lbl.pack(side="left", padx=4)
         
         self.pers_combo = ttk.Combobox(
-            pers_box,
+            self.pers_box,
             values=[f"{t['emoji']} {t['name']}" for t in PERSONALITY_THEMES.values()],
             state="readonly",
             font=FONT_RETRO_SMALL,
@@ -173,12 +174,12 @@ class DashboardScreen(BaseScreen):
         self.quote_card.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 10))
         self.quote_card.columnconfigure(0, weight=1)
 
-        quote_top = tk.Frame(self.quote_card, bg=self.theme["bg_card"])
-        quote_top.grid(row=0, column=0, sticky="ew")
-        quote_top.columnconfigure(0, weight=1)
+        self.quote_top = tk.Frame(self.quote_card, bg=self.theme["bg_card"])
+        self.quote_top.grid(row=0, column=0, sticky="ew")
+        self.quote_top.columnconfigure(0, weight=1)
 
         self.quote_badge_lbl = tk.Label(
-            quote_top,
+            self.quote_top,
             text=f"[ 💡 DAILY PSYCHOLOGICAL REFLECTION // DAY {day_num} OF 365 ]",
             font=FONT_RETRO_SMALL,
             fg=self.theme["accent_gold"],
@@ -187,11 +188,11 @@ class DashboardScreen(BaseScreen):
         self.quote_badge_lbl.pack(side="left")
 
         # Quote Actions
-        quote_actions = tk.Frame(quote_top, bg=self.theme["bg_card"])
-        quote_actions.pack(side="right")
+        self.quote_actions = tk.Frame(self.quote_top, bg=self.theme["bg_card"])
+        self.quote_actions.pack(side="right")
 
         self.shuffle_quote_btn = tk.Button(
-            quote_actions,
+            self.quote_actions,
             text="[ 🎲 RANDOM INSIGHT ]",
             font=("Consolas", 7, "bold"),
             bg=self.theme["bg_inner"],
@@ -206,7 +207,7 @@ class DashboardScreen(BaseScreen):
         self.shuffle_quote_btn.pack(side="left", padx=(0, 6))
 
         self.speak_quote_btn = tk.Button(
-            quote_actions,
+            self.quote_actions,
             text="[ 🔊 READ ALOUD + BGM ]",
             font=("Consolas", 7, "bold"),
             bg=self.theme["bg_inner"],
@@ -240,7 +241,7 @@ class DashboardScreen(BaseScreen):
         self.quote_text_box.tag_config(
             "word_highlight",
             background=self.theme["accent_primary"],
-            foreground="#000000",
+            foreground=self.theme.get("accent_text", "#000000"),
             font=("Consolas", 10, "bold")
         )
         self.quote_text_box.bind("<Key>", lambda e: "break")
@@ -272,7 +273,7 @@ class DashboardScreen(BaseScreen):
             text="[+] WRITE NEW ENTRY",
             font=FONT_RETRO_HEADER,
             bg=self.theme["accent_primary"],
-            fg="#000000",
+            fg=self.theme.get("accent_text", "#000000"),
             activebackground=self.theme["accent_secondary"],
             activeforeground="#FFFFFF",
             relief="raised",
@@ -474,18 +475,30 @@ class DashboardScreen(BaseScreen):
         t = self.theme
         self.configure(bg=t["bg_main"])
         self.header.configure(bg=t["bg_main"])
+        if hasattr(self, "title_box"):
+            self.title_box.configure(bg=t["bg_main"])
         self.title_lbl.configure(text=f"★ LIFELENS // {t['name'].upper()} STATION ★", fg=t["accent_primary"], bg=t["bg_main"])
         self.subtitle_lbl.configure(text=f">> {t['tagline']}", fg=t["text_muted"], bg=t["bg_main"])
+        if hasattr(self, "right_header"):
+            self.right_header.configure(bg=t["bg_main"])
         self.date_badge.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "pers_box"):
+            self.pers_box.configure(bg=t["bg_main"])
+        if hasattr(self, "pers_lbl"):
+            self.pers_lbl.configure(fg=t["accent_primary"], bg=t["bg_main"])
         self.quote_card.configure(bg=t["bg_card"])
+        if hasattr(self, "quote_top"):
+            self.quote_top.configure(bg=t["bg_card"])
         self.quote_badge_lbl.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "quote_actions"):
+            self.quote_actions.configure(bg=t["bg_card"])
         
         self.quote_text_box.configure(bg=t["bg_card"], fg=t["text_main"])
         self.quote_text_box.tag_configure("quote_body", foreground=t["text_main"])
         self.quote_text_box.tag_configure(
             "word_highlight",
             background=t["accent_primary"],
-            foreground="#000000",
+            foreground=t.get("accent_text", "#000000"),
             font=("Consolas", 10, "bold")
         )
         self.quote_author_lbl.configure(fg=t["accent_primary"], bg=t["bg_card"])
@@ -493,7 +506,7 @@ class DashboardScreen(BaseScreen):
         self.speak_quote_btn.configure(bg=t["bg_inner"], fg=t["accent_secondary"])
         self.kpi_container.configure(bg=t["bg_main"])
         self.actions_bar.configure(bg=t["bg_main"])
-        self.new_btn.configure(bg=t["accent_primary"], activebackground=t["accent_secondary"])
+        self.new_btn.configure(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), activebackground=t["accent_secondary"])
         self.ambient_btn.configure(bg=t["bg_card"], fg=t["accent_gold"], activebackground=t["bg_inner"])
         self.audio_settings_btn.configure(bg=t["bg_card"], fg=t["accent_primary"], activebackground=t["bg_inner"])
         self.clear_sample_btn.configure(bg=t["bg_card"], fg=t["text_muted"], activebackground=t["bg_inner"])
@@ -508,6 +521,7 @@ class DashboardScreen(BaseScreen):
         self.chart_container.configure(bg=t["bg_card"])
 
         curr_obj = PERSONALITY_THEMES.get(self.controller.active_personality, {})
+        self.pers_combo.configure(values=[f"{p['emoji']} {p['name']}" for p in PERSONALITY_THEMES.values()])
         self.pers_combo.set(f"{curr_obj.get('emoji', '🎮')} {self.controller.active_personality}")
 
         for child in self.kpi_container.winfo_children():
@@ -695,30 +709,30 @@ class NewEntryScreen(BaseScreen):
         self.rowconfigure(0, weight=1)
 
         t = self.theme
-        canvas = tk.Canvas(self, bg=t["bg_main"], highlightthickness=0)
-        v_scroll = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        form_frame = tk.Frame(canvas, bg=t["bg_main"])
+        self.form_canvas = tk.Canvas(self, bg=t["bg_main"], highlightthickness=0)
+        v_scroll = ttk.Scrollbar(self, orient="vertical", command=self.form_canvas.yview)
+        self.form_frame = tk.Frame(self.form_canvas, bg=t["bg_main"])
 
-        form_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas_window = canvas.create_window((0, 0), window=form_frame, anchor="nw")
-        canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_window, width=e.width))
+        self.form_frame.bind("<Configure>", lambda e: self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all")))
+        canvas_window = self.form_canvas.create_window((0, 0), window=self.form_frame, anchor="nw")
+        self.form_canvas.bind("<Configure>", lambda e: self.form_canvas.itemconfig(canvas_window, width=e.width))
 
-        canvas.configure(yscrollcommand=v_scroll.set)
-        canvas.grid(row=0, column=0, sticky="nsew")
+        self.form_canvas.configure(yscrollcommand=v_scroll.set)
+        self.form_canvas.grid(row=0, column=0, sticky="nsew")
         v_scroll.grid(row=0, column=1, sticky="ns")
 
-        form_frame.columnconfigure(0, weight=1)
+        self.form_frame.columnconfigure(0, weight=1)
 
-        self.card = tk.Frame(form_frame, bg=t["bg_card"], bd=2, relief="ridge")
+        self.card = tk.Frame(self.form_frame, bg=t["bg_card"], bd=2, relief="ridge")
         self.card.grid(row=0, column=0, sticky="ew", padx=24, pady=16)
         self.card.columnconfigure(0, weight=1)
 
         # Title
-        title_box = tk.Frame(self.card, bg=t["bg_card"])
-        title_box.pack(fill="x", padx=18, pady=(12, 8))
+        self.title_box = tk.Frame(self.card, bg=t["bg_card"])
+        self.title_box.pack(fill="x", padx=18, pady=(12, 8))
         
         self.form_title = tk.Label(
-            title_box,
+            self.title_box,
             text=f"[ ■ LOG CREATION TERMINAL // {t['name'].upper()} ■ ]",
             font=("Consolas", 12, "bold"),
             fg=t["accent_primary"],
@@ -731,11 +745,11 @@ class NewEntryScreen(BaseScreen):
         self.prompt_box.pack(fill="x", padx=18, pady=(0, 10))
         self.prompt_box.columnconfigure(0, weight=1)
 
-        prompt_top = tk.Frame(self.prompt_box, bg=t["bg_inner"])
-        prompt_top.pack(fill="x")
+        self.prompt_top = tk.Frame(self.prompt_box, bg=t["bg_inner"])
+        self.prompt_top.pack(fill="x")
 
         self.prompt_badge_lbl = tk.Label(
-            prompt_top,
+            self.prompt_top,
             text="[ 💭 MINDFUL REFLECTION PROMPT ]",
             font=FONT_RETRO_SMALL,
             fg=t["accent_gold"],
@@ -744,7 +758,7 @@ class NewEntryScreen(BaseScreen):
         self.prompt_badge_lbl.pack(side="left")
 
         self.prompt_shuffle_btn = tk.Button(
-            prompt_top,
+            self.prompt_top,
             text="[ 🎲 SHUFFLE PROMPT ]",
             font=("Consolas", 7),
             bg=t["bg_card"],
@@ -771,24 +785,24 @@ class NewEntryScreen(BaseScreen):
         self.prompt_text_lbl.pack(fill="x", pady=(2, 0))
 
         # Row 1: Date & Activity
-        row1 = tk.Frame(self.card, bg=t["bg_card"])
-        row1.pack(fill="x", padx=18, pady=(0, 10))
-        row1.columnconfigure(0, weight=1)
-        row1.columnconfigure(1, weight=1)
+        self.row1 = tk.Frame(self.card, bg=t["bg_card"])
+        self.row1.pack(fill="x", padx=18, pady=(0, 10))
+        self.row1.columnconfigure(0, weight=1)
+        self.row1.columnconfigure(1, weight=1)
 
-        date_box = tk.Frame(row1, bg=t["bg_card"])
-        date_box.grid(row=0, column=0, sticky="ew", padx=(0, 8))
-        self.date_lbl = tk.Label(date_box, text="// DATE [YYYY-MM-DD]:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.date_box = tk.Frame(self.row1, bg=t["bg_card"])
+        self.date_box.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        self.date_lbl = tk.Label(self.date_box, text="// DATE [YYYY-MM-DD]:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.date_lbl.pack(anchor="w", pady=(0, 2))
         
-        date_sub = tk.Frame(date_box, bg=t["bg_card"])
-        date_sub.pack(fill="x")
-        self.date_entry = tk.Entry(date_sub, font=FONT_RETRO_BODY, bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"], bd=2, relief="sunken")
+        self.date_sub = tk.Frame(self.date_box, bg=t["bg_card"])
+        self.date_sub.pack(fill="x")
+        self.date_entry = tk.Entry(self.date_sub, font=FONT_RETRO_BODY, bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"], bd=2, relief="sunken")
         self.date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
         self.date_entry.pack(side="left", fill="x", expand=True)
 
         self.today_btn = tk.Button(
-            date_sub,
+            self.date_sub,
             text="[TODAY]",
             font=FONT_RETRO_SMALL,
             bg=t["bg_inner"],
@@ -801,20 +815,20 @@ class NewEntryScreen(BaseScreen):
         )
         self.today_btn.pack(side="right", padx=(6, 0))
 
-        act_box = tk.Frame(row1, bg=t["bg_card"])
-        act_box.grid(row=0, column=1, sticky="ew", padx=(8, 0))
-        self.act_lbl = tk.Label(act_box, text="// ACTIVITY / FOCUS:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.act_box = tk.Frame(self.row1, bg=t["bg_card"])
+        self.act_box.grid(row=0, column=1, sticky="ew", padx=(8, 0))
+        self.act_lbl = tk.Label(self.act_box, text="// ACTIVITY / FOCUS:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.act_lbl.pack(anchor="w", pady=(0, 2))
-        self.act_combo = ttk.Combobox(act_box, values=ACTIVITIES, textvariable=self.activity_val, state="readonly", font=FONT_RETRO_BODY)
+        self.act_combo = ttk.Combobox(self.act_box, values=ACTIVITIES, textvariable=self.activity_val, state="readonly", font=FONT_RETRO_BODY)
         self.act_combo.pack(fill="x")
 
         # Row 2: Mood Selection
-        mood_box = tk.Frame(self.card, bg=t["bg_card"])
-        mood_box.pack(fill="x", padx=18, pady=(0, 10))
-        self.mood_title = tk.Label(mood_box, text="// EMOTIONAL STATE:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.mood_box = tk.Frame(self.card, bg=t["bg_card"])
+        self.mood_box.pack(fill="x", padx=18, pady=(0, 10))
+        self.mood_title = tk.Label(self.mood_box, text="// EMOTIONAL STATE:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.mood_title.pack(anchor="w", pady=(0, 3))
 
-        self.mood_buttons_frame = tk.Frame(mood_box, bg=t["bg_card"])
+        self.mood_buttons_frame = tk.Frame(self.mood_box, bg=t["bg_card"])
         self.mood_buttons_frame.pack(fill="x")
         self.mood_btn_map = {}
 
@@ -838,16 +852,16 @@ class NewEntryScreen(BaseScreen):
         self._set_mood("Happy")
 
         # Row 3: Energy Meter
-        energy_box = tk.Frame(self.card, bg=t["bg_card"])
-        energy_box.pack(fill="x", padx=18, pady=(0, 10))
+        self.energy_box = tk.Frame(self.card, bg=t["bg_card"])
+        self.energy_box.pack(fill="x", padx=18, pady=(0, 10))
 
-        energy_header = tk.Frame(energy_box, bg=t["bg_card"])
-        energy_header.pack(fill="x")
-        self.energy_title = tk.Label(energy_header, text="// ENERGY & STAMINA METER:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.energy_header = tk.Frame(self.energy_box, bg=t["bg_card"])
+        self.energy_header.pack(fill="x")
+        self.energy_title = tk.Label(self.energy_header, text="// ENERGY & STAMINA METER:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.energy_title.pack(side="left")
         
         self.energy_display_lbl = tk.Label(
-            energy_header,
+            self.energy_header,
             text=make_pixel_bar(8, 10, width=10) + " [HIGH]",
             font=FONT_RETRO_HEADER,
             fg=t["accent_green"],
@@ -856,7 +870,7 @@ class NewEntryScreen(BaseScreen):
         self.energy_display_lbl.pack(side="right")
 
         self.energy_slider = ttk.Scale(
-            energy_box,
+            self.energy_box,
             from_=1,
             to=10,
             orient="horizontal",
@@ -866,16 +880,16 @@ class NewEntryScreen(BaseScreen):
         self.energy_slider.pack(fill="x", pady=(3, 0))
 
         # Row 4: Journal Text & Voice Button
-        text_box_frame = tk.Frame(self.card, bg=t["bg_card"])
-        text_box_frame.pack(fill="x", padx=18, pady=(0, 10))
+        self.text_box_frame = tk.Frame(self.card, bg=t["bg_card"])
+        self.text_box_frame.pack(fill="x", padx=18, pady=(0, 10))
         
-        text_header = tk.Frame(text_box_frame, bg=t["bg_card"])
-        text_header.pack(fill="x", pady=(0, 3))
-        self.reflect_lbl = tk.Label(text_header, text="// REFLECTION / LOG TEXT:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.text_header = tk.Frame(self.text_box_frame, bg=t["bg_card"])
+        self.text_header.pack(fill="x", pady=(0, 3))
+        self.reflect_lbl = tk.Label(self.text_header, text="// REFLECTION / LOG TEXT:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.reflect_lbl.pack(side="left")
 
         self.voice_btn = tk.Button(
-            text_header,
+            self.text_header,
             text="[🎙️ RECORD VOICE]",
             font=FONT_RETRO_SMALL,
             bg=t["accent_secondary"],
@@ -889,11 +903,11 @@ class NewEntryScreen(BaseScreen):
         )
         self.voice_btn.pack(side="right")
 
-        self.voice_status_lbl = tk.Label(text_header, text="", font=FONT_RETRO_SMALL, fg=t["accent_primary"], bg=t["bg_card"])
+        self.voice_status_lbl = tk.Label(self.text_header, text="", font=FONT_RETRO_SMALL, fg=t["accent_primary"], bg=t["bg_card"])
         self.voice_status_lbl.pack(side="right", padx=6)
 
         self.text_area = tk.Text(
-            text_box_frame,
+            self.text_box_frame,
             font=FONT_RETRO_BODY,
             height=5,
             wrap="word",
@@ -923,19 +937,19 @@ class NewEntryScreen(BaseScreen):
         )
         self.photo_sec_lbl.pack(side="left")
 
-        img_body = tk.Frame(self.img_section, bg=t["bg_inner"], padx=8, pady=8)
-        img_body.pack(fill="x")
-        img_body.columnconfigure(0, weight=1)
-        img_body.columnconfigure(1, weight=1)
+        self.img_body = tk.Frame(self.img_section, bg=t["bg_inner"], padx=8, pady=8)
+        self.img_body.pack(fill="x")
+        self.img_body.columnconfigure(0, weight=1)
+        self.img_body.columnconfigure(1, weight=1)
 
-        img_controls = tk.Frame(img_body, bg=t["bg_inner"])
-        img_controls.grid(row=0, column=0, sticky="nw")
+        self.img_controls = tk.Frame(self.img_body, bg=t["bg_inner"])
+        self.img_controls.grid(row=0, column=0, sticky="nw")
 
-        btn_row = tk.Frame(img_controls, bg=t["bg_inner"])
-        btn_row.pack(anchor="w", pady=(0, 5))
+        self.btn_row = tk.Frame(self.img_controls, bg=t["bg_inner"])
+        self.btn_row.pack(anchor="w", pady=(0, 5))
 
         self.upload_btn = tk.Button(
-            btn_row,
+            self.btn_row,
             text="[📂 BROWSE FILE]",
             font=FONT_RETRO_SMALL,
             bg=t["bg_card"],
@@ -950,11 +964,11 @@ class NewEntryScreen(BaseScreen):
         self.upload_btn.pack(side="left", padx=(0, 6))
 
         self.camera_btn = tk.Button(
-            btn_row,
+            self.btn_row,
             text="[📸 WEBCAM SNAP]",
             font=FONT_RETRO_SMALL,
             bg=t["accent_green"],
-            fg="#000000",
+            fg=t.get("accent_text", "#000000"),
             relief="raised",
             bd=2,
             cursor="hand2",
@@ -964,10 +978,10 @@ class NewEntryScreen(BaseScreen):
         )
         self.camera_btn.pack(side="left")
 
-        self.filter_lbl = tk.Label(img_controls, text="// 8-BIT EFFECT FILTER:", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_inner"])
+        self.filter_lbl = tk.Label(self.img_controls, text="// 8-BIT EFFECT FILTER:", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_inner"])
         self.filter_lbl.pack(anchor="w")
         self.filter_combo = ttk.Combobox(
-            img_controls,
+            self.img_controls,
             values=AVAILABLE_FILTERS,
             textvariable=self.filter_val,
             state="readonly",
@@ -978,7 +992,7 @@ class NewEntryScreen(BaseScreen):
         self.filter_combo.bind("<<ComboboxSelected>>", lambda e: self._update_image_preview())
 
         self.remove_img_btn = tk.Button(
-            img_controls,
+            self.img_controls,
             text="[x] EJECT IMAGE",
             font=FONT_RETRO_SMALL,
             bg=t["bg_inner"],
@@ -990,7 +1004,7 @@ class NewEntryScreen(BaseScreen):
         self.remove_img_btn.pack(anchor="w")
         self.remove_img_btn.config(state="disabled")
 
-        self.preview_container = tk.Frame(img_body, bg="#101018", width=220, height=120, bd=2, relief="sunken")
+        self.preview_container = tk.Frame(self.img_body, bg=t["bg_inner"], width=220, height=120, bd=2, relief="sunken")
         self.preview_container.grid(row=0, column=1, sticky="ne")
         self.preview_container.pack_propagate(False)
 
@@ -999,20 +1013,20 @@ class NewEntryScreen(BaseScreen):
             text="[ NO PHOTO ATTACHED ]\n(FILE OR CAMERA)",
             font=FONT_RETRO_SMALL,
             fg=t["text_muted"],
-            bg="#101018"
+            bg=t["bg_inner"]
         )
         self.preview_lbl.pack(expand=True)
 
         # Bottom Actions
-        action_row = tk.Frame(self.card, bg=t["bg_card"])
-        action_row.pack(fill="x", padx=18, pady=(0, 16))
+        self.action_row = tk.Frame(self.card, bg=t["bg_card"])
+        self.action_row.pack(fill="x", padx=18, pady=(0, 16))
 
         self.save_btn = tk.Button(
-            action_row,
+            self.action_row,
             text="[★ SAVE QUEST LOG ★]",
             font=FONT_RETRO_HEADER,
             bg=t["accent_primary"],
-            fg="#000000",
+            fg=t.get("accent_text", "#000000"),
             activebackground=t["accent_secondary"],
             activeforeground="#FFFFFF",
             relief="raised",
@@ -1025,7 +1039,7 @@ class NewEntryScreen(BaseScreen):
         self.save_btn.pack(side="left")
 
         self.reset_btn = tk.Button(
-            action_row,
+            self.action_row,
             text="[RESET FORM]",
             font=FONT_RETRO_BODY,
             bg=t["bg_inner"],
@@ -1046,17 +1060,45 @@ class NewEntryScreen(BaseScreen):
     def apply_theme(self):
         t = self.theme
         self.configure(bg=t["bg_main"])
+        if hasattr(self, "form_canvas"):
+            self.form_canvas.configure(bg=t["bg_main"])
+        if hasattr(self, "form_frame"):
+            self.form_frame.configure(bg=t["bg_main"])
         self.card.configure(bg=t["bg_card"])
+        if hasattr(self, "title_box"):
+            self.title_box.configure(bg=t["bg_card"])
         self.form_title.configure(text=f"[ ■ LOG CREATION TERMINAL // {t['name'].upper()} ■ ]", fg=t["accent_primary"], bg=t["bg_card"])
         self.prompt_box.configure(bg=t["bg_inner"])
+        if hasattr(self, "prompt_top"):
+            self.prompt_top.configure(bg=t["bg_inner"])
         self.prompt_badge_lbl.configure(fg=t["accent_gold"], bg=t["bg_inner"])
         self.prompt_shuffle_btn.configure(bg=t["bg_card"], fg=t["accent_primary"])
         self.prompt_text_lbl.configure(fg=t["text_main"], bg=t["bg_inner"])
+        if hasattr(self, "row1"):
+            self.row1.configure(bg=t["bg_card"])
+        if hasattr(self, "date_box"):
+            self.date_box.configure(bg=t["bg_card"])
+        if hasattr(self, "date_sub"):
+            self.date_sub.configure(bg=t["bg_card"])
         self.date_lbl.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        self.date_entry.configure(bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"])
         self.today_btn.configure(bg=t["bg_inner"], fg=t["accent_primary"])
+        if hasattr(self, "act_box"):
+            self.act_box.configure(bg=t["bg_card"])
         self.act_lbl.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "mood_box"):
+            self.mood_box.configure(bg=t["bg_card"])
         self.mood_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        self.mood_buttons_frame.configure(bg=t["bg_card"])
+        if hasattr(self, "energy_box"):
+            self.energy_box.configure(bg=t["bg_card"])
+        if hasattr(self, "energy_header"):
+            self.energy_header.configure(bg=t["bg_card"])
         self.energy_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "text_box_frame"):
+            self.text_box_frame.configure(bg=t["bg_card"])
+        if hasattr(self, "text_header"):
+            self.text_header.configure(bg=t["bg_card"])
         self.reflect_lbl.configure(fg=t["accent_gold"], bg=t["bg_card"])
         self.voice_btn.configure(bg=t["accent_secondary"])
         self.voice_status_lbl.configure(fg=t["accent_primary"], bg=t["bg_card"])
@@ -1064,10 +1106,21 @@ class NewEntryScreen(BaseScreen):
         self.img_section.configure(bg=t["bg_inner"])
         self.img_sec_header.configure(bg=t["bg_card"])
         self.photo_sec_lbl.configure(fg=t["accent_primary"], bg=t["bg_card"])
+        if hasattr(self, "img_body"):
+            self.img_body.configure(bg=t["bg_inner"])
+        if hasattr(self, "img_controls"):
+            self.img_controls.configure(bg=t["bg_inner"])
+        if hasattr(self, "btn_row"):
+            self.btn_row.configure(bg=t["bg_inner"])
         self.upload_btn.configure(bg=t["bg_card"], fg=t["accent_primary"])
-        self.camera_btn.configure(bg=t["accent_green"])
+        self.camera_btn.configure(bg=t["accent_green"], fg=t.get("accent_text", "#000000"))
         self.filter_lbl.configure(fg=t["text_muted"], bg=t["bg_inner"])
-        self.save_btn.configure(bg=t["accent_primary"], activebackground=t["accent_secondary"])
+        self.remove_img_btn.configure(bg=t["bg_inner"])
+        self.preview_container.configure(bg=t["bg_inner"])
+        self.preview_lbl.configure(bg=t["bg_inner"], fg=t["text_muted"])
+        if hasattr(self, "action_row"):
+            self.action_row.configure(bg=t["bg_card"])
+        self.save_btn.configure(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), activebackground=t["accent_secondary"])
         self.reset_btn.configure(bg=t["bg_inner"], fg=t["text_muted"])
         self._set_mood(self.selected_mood.get())
         self._on_energy_slider_change(self.energy_val.get())
@@ -1228,31 +1281,31 @@ class TimelineScreen(BaseScreen):
         self.filter_bar = tk.Frame(self, bg=t["bg_card"], bd=2, relief="ridge")
         self.filter_bar.grid(row=0, column=0, sticky="ew", padx=24, pady=(16, 8))
         
-        inner_filter = tk.Frame(self.filter_bar, bg=t["bg_card"], padx=10, pady=6)
-        inner_filter.pack(fill="x")
+        self.inner_filter = tk.Frame(self.filter_bar, bg=t["bg_card"], padx=10, pady=6)
+        self.inner_filter.pack(fill="x")
 
-        self.lbl_s = tk.Label(inner_filter, text="SEARCH:", font=FONT_RETRO_HEADER, fg=t["accent_primary"], bg=t["bg_card"])
+        self.lbl_s = tk.Label(self.inner_filter, text="SEARCH:", font=FONT_RETRO_HEADER, fg=t["accent_primary"], bg=t["bg_card"])
         self.lbl_s.pack(side="left", padx=(0, 4))
-        self.search_entry = tk.Entry(inner_filter, textvariable=self.search_query, width=15, font=FONT_RETRO_BODY, bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"], bd=2, relief="sunken")
+        self.search_entry = tk.Entry(self.inner_filter, textvariable=self.search_query, width=15, font=FONT_RETRO_BODY, bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"], bd=2, relief="sunken")
         self.search_entry.pack(side="left", padx=(0, 10))
         self.search_query.trace_add("write", lambda *args: self.refresh_timeline())
 
-        self.lbl_m = tk.Label(inner_filter, text="MOOD:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
+        self.lbl_m = tk.Label(self.inner_filter, text="MOOD:", font=FONT_RETRO_HEADER, fg=t["accent_gold"], bg=t["bg_card"])
         self.lbl_m.pack(side="left", padx=(0, 4))
         mood_opts = ["All Moods"] + list(MOOD_MAP.keys())
-        self.mood_combo = ttk.Combobox(inner_filter, values=mood_opts, textvariable=self.mood_filter, state="readonly", width=11, font=FONT_RETRO_BODY)
+        self.mood_combo = ttk.Combobox(self.inner_filter, values=mood_opts, textvariable=self.mood_filter, state="readonly", width=11, font=FONT_RETRO_BODY)
         self.mood_combo.pack(side="left", padx=(0, 10))
         self.mood_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh_timeline())
 
-        self.lbl_a = tk.Label(inner_filter, text="ACTIVITY:", font=FONT_RETRO_HEADER, fg=t["accent_secondary"], bg=t["bg_card"])
+        self.lbl_a = tk.Label(self.inner_filter, text="ACTIVITY:", font=FONT_RETRO_HEADER, fg=t["accent_secondary"], bg=t["bg_card"])
         self.lbl_a.pack(side="left", padx=(0, 4))
         act_opts = ["All Activities"] + ACTIVITIES
-        self.act_combo = ttk.Combobox(inner_filter, values=act_opts, textvariable=self.act_filter, state="readonly", width=13, font=FONT_RETRO_BODY)
+        self.act_combo = ttk.Combobox(self.inner_filter, values=act_opts, textvariable=self.act_filter, state="readonly", width=13, font=FONT_RETRO_BODY)
         self.act_combo.pack(side="left", padx=(0, 10))
         self.act_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh_timeline())
 
         self.clear_btn = tk.Button(
-            inner_filter,
+            self.inner_filter,
             text="[CLEAR]",
             font=FONT_RETRO_SMALL,
             bg=t["bg_inner"],
@@ -1265,16 +1318,16 @@ class TimelineScreen(BaseScreen):
         )
         self.clear_btn.pack(side="left")
 
-        self.count_lbl = tk.Label(inner_filter, text="", font=FONT_RETRO_HEADER, fg=t["accent_green"], bg=t["bg_card"])
+        self.count_lbl = tk.Label(self.inner_filter, text="", font=FONT_RETRO_HEADER, fg=t["accent_green"], bg=t["bg_card"])
         self.count_lbl.pack(side="right")
 
-        canvas_frame = tk.Frame(self, bg=t["bg_main"])
-        canvas_frame.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 16))
-        canvas_frame.columnconfigure(0, weight=1)
-        canvas_frame.rowconfigure(0, weight=1)
+        self.canvas_frame = tk.Frame(self, bg=t["bg_main"])
+        self.canvas_frame.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 16))
+        self.canvas_frame.columnconfigure(0, weight=1)
+        self.canvas_frame.rowconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(canvas_frame, bg=t["bg_main"], highlightthickness=0)
-        self.v_scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.canvas.yview)
+        self.canvas = tk.Canvas(self.canvas_frame, bg=t["bg_main"], highlightthickness=0)
+        self.v_scrollbar = ttk.Scrollbar(self.canvas_frame, orient="vertical", command=self.canvas.yview)
         
         self.cards_frame = tk.Frame(self.canvas, bg=t["bg_main"])
         self.cards_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
@@ -1299,14 +1352,28 @@ class TimelineScreen(BaseScreen):
     def apply_theme(self):
         t = self.theme
         self.configure(bg=t["bg_main"])
-        self.filter_bar.configure(bg=t["bg_card"])
-        self.lbl_s.configure(fg=t["accent_primary"], bg=t["bg_card"])
-        self.lbl_m.configure(fg=t["accent_gold"], bg=t["bg_card"])
-        self.lbl_a.configure(fg=t["accent_secondary"], bg=t["bg_card"])
-        self.clear_btn.configure(bg=t["bg_inner"], fg=t["text_muted"])
-        self.count_lbl.configure(fg=t["accent_green"], bg=t["bg_card"])
-        self.canvas.configure(bg=t["bg_main"])
-        self.cards_frame.configure(bg=t["bg_main"])
+        if hasattr(self, "filter_bar"):
+            self.filter_bar.configure(bg=t["bg_card"])
+        if hasattr(self, "inner_filter"):
+            self.inner_filter.configure(bg=t["bg_card"])
+        if hasattr(self, "lbl_s"):
+            self.lbl_s.configure(fg=t["accent_primary"], bg=t["bg_card"])
+        if hasattr(self, "search_entry"):
+            self.search_entry.configure(bg=t["bg_inner"], fg=t["text_main"], insertbackground=t["accent_primary"])
+        if hasattr(self, "lbl_m"):
+            self.lbl_m.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "lbl_a"):
+            self.lbl_a.configure(fg=t["accent_secondary"], bg=t["bg_card"])
+        if hasattr(self, "clear_btn"):
+            self.clear_btn.configure(bg=t["bg_inner"], fg=t["text_muted"])
+        if hasattr(self, "count_lbl"):
+            self.count_lbl.configure(fg=t["accent_green"], bg=t["bg_card"])
+        if hasattr(self, "canvas_frame"):
+            self.canvas_frame.configure(bg=t["bg_main"])
+        if hasattr(self, "canvas"):
+            self.canvas.configure(bg=t["bg_main"])
+        if hasattr(self, "cards_frame"):
+            self.cards_frame.configure(bg=t["bg_main"])
         self.refresh_timeline()
 
     def on_show(self):
@@ -1747,13 +1814,14 @@ class AboutScreen(BaseScreen):
         )
         self.title_lbl.pack(anchor="w", pady=(0, 4))
 
-        tk.Label(
+        self.subtitle_desc = tk.Label(
             self.card,
-            text=">> DUAL-TRACK AUDIO MIXER // 365 REFLECTIONS // 6 PERSONALITY THEMES",
+            text=f">> DUAL-TRACK AUDIO MIXER // 365 REFLECTIONS // {len(PERSONALITY_THEMES)} PERSONALITY THEMES",
             font=FONT_RETRO_SMALL,
             fg=t["text_muted"],
             bg=t["bg_card"]
-        ).pack(anchor="w", pady=(0, 12))
+        )
+        self.subtitle_desc.pack(anchor="w", pady=(0, 12))
 
         # -------------------------------------------------------------
         # DUAL AUDIO MIXER & SOUNDTRACK SETTINGS CARTRIDGE
@@ -2013,7 +2081,7 @@ class AboutScreen(BaseScreen):
         # Personalities List
         self.pers_title = tk.Label(
             self.card,
-            text="[ ■ 6 PERSONALITY THEMES INCLUDED ■ ]",
+            text=f"[ ■ {len(PERSONALITY_THEMES)} PERSONALITY THEMES INCLUDED ■ ]",
             font=FONT_RETRO_HEADER,
             fg=t["accent_gold"],
             bg=t["bg_card"]
@@ -2022,12 +2090,6 @@ class AboutScreen(BaseScreen):
 
         self.pers_frame = tk.Frame(self.card, bg=t["bg_inner"], bd=1, relief="solid", padx=10, pady=8)
         self.pers_frame.pack(fill="x", pady=(0, 12))
-
-        for p_name, p_meta in PERSONALITY_THEMES.items():
-            p_row = tk.Frame(self.pers_frame, bg=t["bg_inner"])
-            p_row.pack(fill="x", pady=1)
-            tk.Label(p_row, text=f"{p_meta['emoji']} {p_meta['name'].upper()}", font=FONT_RETRO_SMALL, fg=p_meta["accent_primary"], bg=t["bg_inner"]).pack(side="left")
-            tk.Label(p_row, text=f":: {p_meta['tagline']}", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_inner"]).pack(side="left", padx=6)
 
         self.tech_title = tk.Label(
             self.card,
@@ -2044,29 +2106,55 @@ class AboutScreen(BaseScreen):
         self.tech_table.columnconfigure(1, weight=2)
         self.tech_table.columnconfigure(2, weight=2)
 
-        h0 = tk.Label(self.tech_table, text="LIBRARY", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
-        h0.grid(row=0, column=0, sticky="ew")
-        h1 = tk.Label(self.tech_table, text="ROLE / PURPOSE", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
-        h1.grid(row=0, column=1, sticky="ew")
-        h2 = tk.Label(self.tech_table, text="WHERE USED IN APP", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
-        h2.grid(row=0, column=2, sticky="ew")
+        self._rebuild_pers_list()
+        self._rebuild_tech_table()
 
-        rows = [
-            ("Tkinter", "GUI and navigation", "Dynamic 6-personality theme windows & Sliding Pet"),
-            ("Pillow", "Image processing & Animated GIFs", "8-Bit pixel filters & Pet GIF playback"),
-            ("OpenCV (cv2)", "Camera capture", "Live webcam snapshot upload"),
-            ("SpeechRecognition", "Voice input", "Voice Entry (Speech-to-Text)"),
-            ("pyttsx3", "Text-to-speech", "Read Aloud entries & 365 quotes (0.75x)"),
-            ("Pygame", "Dual-Track Audio", "App BGM + golden-brown.mp3 Quote Narration Music"),
-            ("Matplotlib", "Charts and analytics", "Personality-themed Insights radar & Energy Waveform"),
-            ("JSON / Quotes DB", "Local data storage", "365+ quotes, settings.json & pet storage")
-        ]
+    def _rebuild_pers_list(self):
+        t = self.theme
+        if hasattr(self, "pers_title"):
+            self.pers_title.configure(text=f"[ ■ {len(PERSONALITY_THEMES)} PERSONALITY THEMES INCLUDED ■ ]", fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "pers_frame"):
+            self.pers_frame.configure(bg=t["bg_inner"])
+            for child in self.pers_frame.winfo_children():
+                child.destroy()
+            for p_name, p_meta in PERSONALITY_THEMES.items():
+                p_row = tk.Frame(self.pers_frame, bg=t["bg_inner"])
+                p_row.pack(fill="x", pady=1)
+                tk.Label(p_row, text=f"{p_meta['emoji']} {p_meta['name'].upper()}", font=FONT_RETRO_SMALL, fg=p_meta["accent_primary"], bg=t["bg_inner"]).pack(side="left")
+                tk.Label(p_row, text=f":: {p_meta['tagline']}", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_inner"]).pack(side="left", padx=6)
 
-        for i, (lib, purp, where) in enumerate(rows, start=1):
-            bg_row = t["bg_card"] if i % 2 != 0 else t["bg_inner"]
-            tk.Label(self.tech_table, text=lib, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["accent_gold"], padx=8, pady=4, anchor="w").grid(row=i, column=0, sticky="ew")
-            tk.Label(self.tech_table, text=purp, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["text_muted"], padx=8, pady=4, anchor="w").grid(row=i, column=1, sticky="ew")
-            tk.Label(self.tech_table, text=where, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["text_main"], padx=8, pady=4, anchor="w").grid(row=i, column=2, sticky="ew")
+    def _rebuild_tech_table(self):
+        t = self.theme
+        if hasattr(self, "tech_title"):
+            self.tech_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        if hasattr(self, "tech_table"):
+            self.tech_table.configure(bg=t["bg_card"])
+            for child in self.tech_table.winfo_children():
+                child.destroy()
+
+            h0 = tk.Label(self.tech_table, text="LIBRARY", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
+            h0.grid(row=0, column=0, sticky="ew")
+            h1 = tk.Label(self.tech_table, text="ROLE / PURPOSE", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
+            h1.grid(row=0, column=1, sticky="ew")
+            h2 = tk.Label(self.tech_table, text="WHERE USED IN APP", font=FONT_RETRO_HEADER, bg=t["bg_inner"], fg=t["accent_primary"], padx=8, pady=4, anchor="w")
+            h2.grid(row=0, column=2, sticky="ew")
+
+            rows = [
+                ("Tkinter", "GUI and navigation", f"Dynamic {len(PERSONALITY_THEMES)}-personality theme windows & Sliding Pet"),
+                ("Pillow", "Image processing & Animated GIFs", "8-Bit pixel filters & Pet GIF playback"),
+                ("OpenCV (cv2)", "Camera capture", "Live webcam snapshot upload"),
+                ("SpeechRecognition", "Voice input", "Voice Entry (Speech-to-Text)"),
+                ("pyttsx3", "Text-to-speech", "Read Aloud entries & 365 quotes (0.75x)"),
+                ("Pygame", "Dual-Track Audio", "App BGM + golden-brown.mp3 Quote Narration Music"),
+                ("Matplotlib", "Charts and analytics", "Personality-themed Insights radar & Energy Waveform"),
+                ("JSON / Quotes DB", "Local data storage", "365+ quotes, settings.json & pet storage")
+            ]
+
+            for i, (lib, purp, where) in enumerate(rows, start=1):
+                bg_row = t["bg_card"] if i % 2 != 0 else t["bg_inner"]
+                tk.Label(self.tech_table, text=lib, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["accent_gold"], padx=8, pady=4, anchor="w").grid(row=i, column=0, sticky="ew")
+                tk.Label(self.tech_table, text=purp, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["text_muted"], padx=8, pady=4, anchor="w").grid(row=i, column=1, sticky="ew")
+                tk.Label(self.tech_table, text=where, font=FONT_RETRO_SMALL, bg=bg_row, fg=t["text_main"], padx=8, pady=4, anchor="w").grid(row=i, column=2, sticky="ew")
 
     def _on_app_vol_change(self, val):
         pct = int(float(val))
@@ -2192,6 +2280,11 @@ class AboutScreen(BaseScreen):
             self.pet_gif_btn.configure(bg=t["bg_card"], fg=t["accent_primary"])
             self.refresh_pet_ui()
 
+        if hasattr(self, "subtitle_desc"):
+            self.subtitle_desc.configure(fg=t["text_muted"], bg=t["bg_card"], text=f">> DUAL-TRACK AUDIO MIXER // 365 REFLECTIONS // {len(PERSONALITY_THEMES)} PERSONALITY THEMES")
+
         self.pers_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
         self.pers_frame.configure(bg=t["bg_inner"])
         self.tech_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
+        self._rebuild_pers_list()
+        self._rebuild_tech_table()

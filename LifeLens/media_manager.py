@@ -228,20 +228,35 @@ class CameraCaptureDialog:
             )
             return
 
+        t = getattr(self.parent, "theme", None)
+        if not t and hasattr(self.parent, "controller"):
+            t = getattr(self.parent.controller, "theme", None)
+        if not t:
+            t = {
+                "bg_main": "#0f0f1b",
+                "bg_card": "#1a192e",
+                "bg_inner": "#252342",
+                "accent_primary": "#00f0ff",
+                "accent_green": "#00ff66",
+                "accent_text": "#000000",
+                "text_main": "#f1f5f9",
+                "text_muted": "#8e8db5"
+            }
+
         self.modal = tk.Toplevel(self.parent)
         self.modal.title("★ RETRO WEBCAM SNAPSHOT ★")
         self.modal.geometry("540x480")
-        self.modal.configure(bg="#0f0f1b")
+        self.modal.configure(bg=t.get("bg_main", "#0f0f1b"))
         self.modal.grab_set()
 
-        top_bar = tk.Frame(self.modal, bg="#1a192e", padx=12, pady=8)
+        top_bar = tk.Frame(self.modal, bg=t.get("bg_card", "#1a192e"), padx=12, pady=8)
         top_bar.pack(fill="x")
         tk.Label(
             top_bar,
             text="[ 📸 LIVE CAMERA STREAM // READY TO SNAP ]",
             font=("Consolas", 10, "bold"),
-            fg="#00f0ff",
-            bg="#1a192e"
+            fg=t.get("accent_primary", "#00f0ff"),
+            bg=t.get("bg_card", "#1a192e")
         ).pack(side="left")
 
         self.view_frame = tk.Frame(self.modal, bg="#000000", bd=2, relief="sunken")
@@ -250,16 +265,16 @@ class CameraCaptureDialog:
         self.stream_lbl = tk.Label(self.view_frame, bg="#000000")
         self.stream_lbl.pack(expand=True)
 
-        ctrls = tk.Frame(self.modal, bg="#1a192e", padx=14, pady=10)
+        ctrls = tk.Frame(self.modal, bg=t.get("bg_card", "#1a192e"), padx=14, pady=10)
         ctrls.pack(fill="x")
 
         snap_btn = tk.Button(
             ctrls,
             text="[ 📸 SNAP PHOTO ]",
             font=("Consolas", 11, "bold"),
-            bg="#00ff66",
-            fg="#000000",
-            activebackground="#00f0ff",
+            bg=t.get("accent_green", "#00ff66"),
+            fg=t.get("accent_text", "#000000"),
+            activebackground=t.get("accent_primary", "#00f0ff"),
             relief="raised",
             bd=3,
             cursor="hand2",
@@ -273,8 +288,8 @@ class CameraCaptureDialog:
             ctrls,
             text="[ CANCEL ]",
             font=("Consolas", 10),
-            bg="#252342",
-            fg="#f1f5f9",
+            bg=t.get("bg_inner", "#252342"),
+            fg=t.get("text_main", "#f1f5f9"),
             relief="raised",
             bd=2,
             cursor="hand2",

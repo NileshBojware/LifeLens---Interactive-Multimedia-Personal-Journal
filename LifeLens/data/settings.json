@@ -1,11 +1,11 @@
 {
-    "personality": "Eternal Cosmos",
-    "app_bgm_vol": 0.91,
-    "quote_bgm_vol": 0.43,
+    "personality": "Sakura Blossom",
+    "app_bgm_vol": 0.81,
+    "quote_bgm_vol": 0.37,
     "quote_bgm_track": "golden-brown.mp3",
     "app_bgm_track": "interstellar_stay.mp3",
     "pet_sleeping": false,
     "pet_type": "Custom GIF",
-    "pet_speed": 3,
+    "pet_speed": 4,
     "pet_custom_path": "C:\\Users\\niles\\Downloads\\PIMVL\\LifeLens\\data\\pets\\custom_pet_1790607308.gif"
 }

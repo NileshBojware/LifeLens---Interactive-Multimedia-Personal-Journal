@@ -120,6 +120,14 @@ class LifeLensApp(tk.Tk):
             background=t["accent_primary"]
         )
 
+        try:
+            self.option_add("*TCombobox*Listbox.background", t["bg_card"])
+            self.option_add("*TCombobox*Listbox.foreground", t["text_main"])
+            self.option_add("*TCombobox*Listbox.selectBackground", t["accent_primary"])
+            self.option_add("*TCombobox*Listbox.selectForeground", t.get("accent_text", "#ffffff"))
+        except Exception:
+            pass
+
     def _build_sidebar(self):
         t = self.theme
         self.sidebar = tk.Frame(self, bg=t["bg_sidebar"], width=230, bd=2, relief="ridge")
@@ -511,7 +519,7 @@ class LifeLensApp(tk.Tk):
         # Update Nav Buttons
         for k, btn in self.nav_buttons.items():
             if k == self.current_screen_name:
-                btn.config(bg=t["accent_primary"], fg="#000000", relief="raised", bd=2)
+                btn.config(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), relief="raised", bd=2)
             else:
                 btn.config(bg=t["bg_sidebar"], fg=t["text_muted"], relief="flat", bd=0)
 
@@ -531,7 +539,7 @@ class LifeLensApp(tk.Tk):
         t = self.theme
         for key, btn in self.nav_buttons.items():
             if key == screen_name:
-                btn.config(bg=t["accent_primary"], fg="#000000", relief="raised", bd=2)
+                btn.config(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), relief="raised", bd=2)
             else:
                 btn.config(bg=t["bg_sidebar"], fg=t["text_muted"], relief="flat", bd=0)
 
