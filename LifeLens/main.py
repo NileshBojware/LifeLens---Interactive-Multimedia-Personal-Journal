@@ -30,6 +30,7 @@ from dashboard import (
     NewEntryScreen,
     TimelineScreen,
     InsightsScreen,
+    ReportsScreen,
     AboutScreen,
     FONT_MONO,
 )
@@ -167,6 +168,7 @@ class LifeLensApp(tk.Tk):
             ("new_entry", "▶ NEW ENTRY"),
             ("timeline", "▶ TIMELINE"),
             ("insights", "▶ INSIGHTS"),
+            ("reports", "▶ REPORTS & CONCLUSION"),
             ("about", "▶ SPECS / THEMES")
         ]
 
@@ -292,6 +294,7 @@ class LifeLensApp(tk.Tk):
             "new_entry": NewEntryScreen(self.content_container, self),
             "timeline": TimelineScreen(self.content_container, self),
             "insights": InsightsScreen(self.content_container, self),
+            "reports": ReportsScreen(self.content_container, self),
             "about": AboutScreen(self.content_container, self)
         }
 

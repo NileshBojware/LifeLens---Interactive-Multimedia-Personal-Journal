@@ -1,5 +1,15 @@
 [
     {
+        "id": "e1d6e981-cce8-4ea7-a934-c22f5ba7022e",
+        "date": "2026-10-23",
+        "mood": "Neutral",
+        "energy": 8,
+        "activity": "Coding",
+        "text": "hii",
+        "image": "data/images/pixel_entry_20261023_105814_963425.png",
+        "is_sample": false
+    },
+    {
         "id": "244b097c-052a-4ad1-9fb0-7eb470994316",
         "date": "2026-10-02",
         "mood": "Neutral",

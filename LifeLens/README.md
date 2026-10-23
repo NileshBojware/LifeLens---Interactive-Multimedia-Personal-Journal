@@ -40,6 +40,16 @@ Switch on the fly between:
 ### 5. 📸 Webcam Snapshot & File Upload
 - Snap real-time webcam photos or upload images with 8-bit retro filters.
 
+### 6. 🖨️ Weekly & Monthly Executive Reports & Algorithmic Conclusion Engine
+- **Psychological & Behavioral Conclusion Engine**: Generates comprehensive conclusions summarizing the user's emotional baseline, stamina trajectory (slope & resilience), activity impact correlations (boosters vs drains), and burnout risk index.
+- **Timeframe Horizons**: Selectable **Weekly (Last 7 Days)**, **Monthly (Last 30 Days)**, and **All-Time / Full Record** periods.
+- **1-Click Printable Artifacts**:
+  - **`[ 🖨️ PRINT REPORT ]`**: Generates a self-contained, university-grade styled HTML report with print stylesheets (`@media print`) and opens it directly in the browser ready for instant Ctrl+P / Save as PDF!
+  - **`[ 📄 EXPORT FILE ]`**: Exports cleanly formatted HTML or plain text (`.txt`) reports to any folder.
+  - **`[ 📋 COPY CONCLUSION ]`**: Copies the entire structured report and conclusion to the clipboard.
+  - **`[ 🔊 READ ALOUD ]`**: Reads the executive conclusion aloud with voice synthesis.
+  - **Formal Evaluator / Teacher Sign-off Block**: Built-in verification fields for academic grading and submission.
+
 ---
 
 ## 🚀 How to Run

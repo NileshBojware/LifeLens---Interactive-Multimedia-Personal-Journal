@@ -14,6 +14,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 IMAGES_DIR = os.path.join(DATA_DIR, "images")
 DATA_FILE = os.path.join(DATA_DIR, "journal_data.json")
 PETS_DIR = os.path.join(DATA_DIR, "pets")
+REPORTS_DIR = os.path.join(DATA_DIR, "reports")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
 # =====================================================================
@@ -333,11 +334,12 @@ ACTIVITIES = [
 
 
 def ensure_data_directories():
-    """Ensure data/, data/images/, and data/pets/ directories exist."""
+    """Ensure data/, data/images/, data/pets/, and data/reports/ directories exist."""
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
         os.makedirs(IMAGES_DIR, exist_ok=True)
         os.makedirs(PETS_DIR, exist_ok=True)
+        os.makedirs(REPORTS_DIR, exist_ok=True)
     except Exception as e:
         print(f"Error creating directories: {e}")
 

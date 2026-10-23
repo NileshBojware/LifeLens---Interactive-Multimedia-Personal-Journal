@@ -34,6 +34,14 @@ from data_manager import (
     clear_sample_entries,
     get_statistics,
 )
+from report_manager import (
+    generate_report_data,
+    generate_html_report,
+    generate_plain_text_report,
+    print_report,
+    export_report_file,
+    REPORTS_DIR,
+)
 from quotes_data import get_daily_quote, get_random_quote
 from media_manager import (
     AVAILABLE_FILTERS,
@@ -317,6 +325,22 @@ class DashboardScreen(BaseScreen):
         )
         self.audio_settings_btn.pack(side="left", padx=(0, 10))
 
+        self.reports_btn = tk.Button(
+            self.actions_bar,
+            text="[ 🖨️ REPORTS & CONCLUSION ]",
+            font=FONT_RETRO_SMALL,
+            bg=self.theme["bg_card"],
+            fg=self.theme["accent_gold"],
+            activebackground=self.theme["bg_inner"],
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            padx=8,
+            pady=5,
+            command=lambda: self.controller.navigate_to("reports")
+        )
+        self.reports_btn.pack(side="left", padx=(0, 10))
+
         self.clear_sample_btn = tk.Button(
             self.actions_bar,
             text="[x] CLEAR SAMPLES",
@@ -509,6 +533,8 @@ class DashboardScreen(BaseScreen):
         self.new_btn.configure(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), activebackground=t["accent_secondary"])
         self.ambient_btn.configure(bg=t["bg_card"], fg=t["accent_gold"], activebackground=t["bg_inner"])
         self.audio_settings_btn.configure(bg=t["bg_card"], fg=t["accent_primary"], activebackground=t["bg_inner"])
+        if hasattr(self, "reports_btn"):
+            self.reports_btn.configure(bg=t["bg_card"], fg=t["accent_gold"], activebackground=t["bg_inner"])
         self.clear_sample_btn.configure(bg=t["bg_card"], fg=t["text_muted"], activebackground=t["bg_inner"])
         self.split_frame.configure(bg=t["bg_main"])
         self.left_card.configure(bg=t["bg_card"])
@@ -1591,6 +1617,22 @@ class InsightsScreen(BaseScreen):
         )
         self.radar_title.pack(side="left")
 
+        self.print_report_btn = tk.Button(
+            self.header,
+            text="[ 🖨️ REPORTS & CONCLUSION ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["accent_primary"],
+            fg=t.get("accent_text", "#000000"),
+            activebackground=t["accent_secondary"],
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            padx=10,
+            pady=4,
+            command=lambda: self.controller.navigate_to("reports")
+        )
+        self.print_report_btn.pack(side="right")
+
         self.chart_scroll_canvas = tk.Canvas(self, bg=t["bg_main"], highlightthickness=0)
         v_scroll = ttk.Scrollbar(self, orient="vertical", command=self.chart_scroll_canvas.yview)
         
@@ -1610,6 +1652,12 @@ class InsightsScreen(BaseScreen):
         self.configure(bg=t["bg_main"])
         self.header.configure(bg=t["bg_main"])
         self.radar_title.configure(fg=t["accent_primary"], bg=t["bg_main"])
+        if hasattr(self, "print_report_btn"):
+            self.print_report_btn.configure(
+                bg=t["accent_primary"],
+                fg=t.get("accent_text", "#000000"),
+                activebackground=t["accent_secondary"]
+            )
         self.chart_scroll_canvas.configure(bg=t["bg_main"])
         self.charts_inner_frame.configure(bg=t["bg_main"])
         self.refresh_insights()
@@ -2288,3 +2336,612 @@ class AboutScreen(BaseScreen):
         self.tech_title.configure(fg=t["accent_gold"], bg=t["bg_card"])
         self._rebuild_pers_list()
         self._rebuild_tech_table()
+
+
+# =====================================================================
+# 6. RETRO EXECUTIVE REPORTS & CONCLUSION SCREEN
+# =====================================================================
+
+class ReportsScreen(BaseScreen):
+    """
+    Weekly & Monthly Executive Journal Reports & Conclusion Screen.
+    Synthesizes clinical wellness evaluations, behavioral correlations,
+    and lifestyle prescriptions with interactive in-app viewing and 1-click printing.
+    """
+
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        self.current_period = "weekly"
+        self.tts_manager = TextToSpeechManager()
+        self.is_speaking_conclusion = False
+        self.current_report_data = None
+        self._toast_job = None
+        self._build_ui()
+
+    def _build_ui(self):
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(3, weight=1)
+
+        t = self.theme
+
+        # 1. Header Frame
+        self.header_frame = tk.Frame(self, bg=t["bg_main"])
+        self.header_frame.grid(row=0, column=0, sticky="ew", padx=24, pady=(16, 4))
+        self.header_frame.columnconfigure(0, weight=1)
+
+        self.title_lbl = tk.Label(
+            self.header_frame,
+            text="★ EXECUTIVE JOURNAL REPORTS & CONCLUSION ★",
+            font=("Consolas", 14, "bold"),
+            fg=t["accent_primary"],
+            bg=t["bg_main"]
+        )
+        self.title_lbl.pack(anchor="w")
+
+        self.subtitle_lbl = tk.Label(
+            self.header_frame,
+            text="// Automated Behavioral Synthesis • Clinical Wellness Conclusions • Printable PDF Artifacts",
+            font=FONT_RETRO_SMALL,
+            fg=t["text_muted"],
+            bg=t["bg_main"]
+        )
+        self.subtitle_lbl.pack(anchor="w", pady=(2, 0))
+
+        # 2. Controls & Actions Toolbar
+        self.controls_bar = tk.Frame(self, bg=t["bg_main"])
+        self.controls_bar.grid(row=1, column=0, sticky="ew", padx=24, pady=(6, 4))
+        self.controls_bar.columnconfigure(0, weight=1)
+        self.controls_bar.columnconfigure(1, weight=1)
+
+        # Left: Period Selector Tabs
+        self.tabs_frame = tk.Frame(self.controls_bar, bg=t["bg_main"])
+        self.tabs_frame.grid(row=0, column=0, sticky="w")
+
+        self.tab_weekly = tk.Button(
+            self.tabs_frame,
+            text="[ 📅 WEEKLY (7 DAYS) ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["accent_primary"],
+            fg=t.get("accent_text", "#000000"),
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=lambda: self._select_period("weekly")
+        )
+        self.tab_weekly.pack(side="left", padx=(0, 6))
+
+        self.tab_monthly = tk.Button(
+            self.tabs_frame,
+            text="[ 🗓️ MONTHLY (30 DAYS) ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["text_muted"],
+            relief="flat",
+            bd=1,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=lambda: self._select_period("monthly")
+        )
+        self.tab_monthly.pack(side="left", padx=(0, 6))
+
+        self.tab_all = tk.Button(
+            self.tabs_frame,
+            text="[ 📚 ALL-TIME RECORD ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["text_muted"],
+            relief="flat",
+            bd=1,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=lambda: self._select_period("all")
+        )
+        self.tab_all.pack(side="left")
+
+        # Right: Action Buttons
+        self.actions_frame = tk.Frame(self.controls_bar, bg=t["bg_main"])
+        self.actions_frame.grid(row=0, column=1, sticky="e")
+
+        self.btn_print = tk.Button(
+            self.actions_frame,
+            text="[ 🖨️ PRINT REPORT ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["accent_gold"],
+            fg="#000000",
+            activebackground=t["accent_primary"],
+            relief="raised",
+            bd=2,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=self._on_print
+        )
+        self.btn_print.pack(side="left", padx=(0, 6))
+
+        self.btn_export = tk.Button(
+            self.actions_frame,
+            text="[ 📄 EXPORT FILE ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["accent_primary"],
+            activebackground=t["bg_inner"],
+            relief="raised",
+            bd=1,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=self._on_export
+        )
+        self.btn_export.pack(side="left", padx=(0, 6))
+
+        self.btn_copy = tk.Button(
+            self.actions_frame,
+            text="[ 📋 COPY CONCLUSION ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["text_main"],
+            activebackground=t["bg_inner"],
+            relief="raised",
+            bd=1,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=self._on_copy_conclusion
+        )
+        self.btn_copy.pack(side="left", padx=(0, 6))
+
+        self.btn_read = tk.Button(
+            self.actions_frame,
+            text="[ 🔊 READ ALOUD ]",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["accent_secondary"],
+            activebackground=t["bg_inner"],
+            relief="raised",
+            bd=1,
+            cursor="hand2",
+            padx=8,
+            pady=4,
+            command=self._on_read_aloud
+        )
+        self.btn_read.pack(side="left")
+
+        # Status / Feedback Toast Banner
+        self.toast_frame = tk.Frame(self, bg=t["bg_main"])
+        self.toast_frame.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 4))
+        self.toast_lbl = tk.Label(
+            self.toast_frame,
+            text="",
+            font=FONT_RETRO_SMALL,
+            fg=t["accent_green"],
+            bg=t["bg_main"]
+        )
+        self.toast_lbl.pack(anchor="w")
+
+        # 3. Scrollable Report Area
+        self.report_canvas = tk.Canvas(self, bg=t["bg_main"], highlightthickness=0)
+        v_scroll = ttk.Scrollbar(self, orient="vertical", command=self.report_canvas.yview)
+
+        self.report_inner = tk.Frame(self.report_canvas, bg=t["bg_main"])
+        self.report_inner.bind(
+            "<Configure>",
+            lambda e: self.report_canvas.configure(scrollregion=self.report_canvas.bbox("all"))
+        )
+        self.canvas_window = self.report_canvas.create_window((0, 0), window=self.report_inner, anchor="nw")
+        self.report_canvas.bind(
+            "<Configure>",
+            lambda e: self.report_canvas.itemconfig(self.canvas_window, width=e.width)
+        )
+
+        self.report_canvas.configure(yscrollcommand=v_scroll.set)
+        self.report_canvas.grid(row=3, column=0, sticky="nsew", padx=24, pady=(0, 16))
+        v_scroll.grid(row=3, column=1, sticky="ns", pady=(0, 16))
+
+        self.report_inner.columnconfigure(0, weight=1)
+        self.report_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    def _on_mousewheel(self, event):
+        if self.winfo_ismapped() and hasattr(self, "report_canvas"):
+            self.report_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def _show_toast(self, text, is_success=True):
+        t = self.theme
+        color = t["accent_green"] if is_success else t["accent_gold"]
+        self.toast_lbl.config(text=text, fg=color)
+        if self._toast_job:
+            self.after_cancel(self._toast_job)
+        self._toast_job = self.after(5000, lambda: self.toast_lbl.config(text=""))
+
+    def _select_period(self, period):
+        self.current_period = period
+        t = self.theme
+        tabs = [
+            ("weekly", self.tab_weekly),
+            ("monthly", self.tab_monthly),
+            ("all", self.tab_all)
+        ]
+        for p_key, btn in tabs:
+            if p_key == period:
+                btn.config(bg=t["accent_primary"], fg=t.get("accent_text", "#000000"), relief="raised", bd=2)
+            else:
+                btn.config(bg=t["bg_card"], fg=t["text_muted"], relief="flat", bd=1)
+        self.refresh_report()
+
+    def _on_print(self):
+        try:
+            fpath = print_report(self.current_period, self.theme)
+            self._show_toast("✓ Report generated and opened in browser! Press Ctrl+P to print or save as PDF.")
+        except Exception as ex:
+            self._show_toast(f"[!] Print preview error: {ex}", is_success=False)
+
+    def _on_export(self):
+        try:
+            fpath = filedialog.asksaveasfilename(
+                title=f"Export LifeLens {self.current_period.capitalize()} Report",
+                defaultextension=".html",
+                filetypes=[
+                    ("HTML Printable Document (*.html)", "*.html"),
+                    ("Plain Text Report (*.txt)", "*.txt"),
+                    ("All Files (*.*)", "*.*")
+                ],
+                initialfile=f"lifelens_{self.current_period}_report.html"
+            )
+            if fpath:
+                file_format = "txt" if fpath.lower().endswith(".txt") else "html"
+                export_report_file(fpath, self.current_period, file_format, self.theme)
+                self._show_toast(f"✓ Report successfully exported to: {os.path.basename(fpath)}")
+        except Exception as ex:
+            self._show_toast(f"[!] Export error: {ex}", is_success=False)
+
+    def _on_copy_conclusion(self):
+        if self.current_report_data:
+            try:
+                txt = generate_plain_text_report(self.current_report_data)
+                self.clipboard_clear()
+                self.clipboard_append(txt)
+                self._show_toast("✓ Complete executive report copied to clipboard!")
+            except Exception as ex:
+                self._show_toast(f"[!] Clipboard error: {ex}", is_success=False)
+
+    def _on_read_aloud(self):
+        if not self.current_report_data:
+            return
+
+        text_to_speak = self.current_report_data.get("executive_conclusion", "")
+        if not text_to_speak:
+            self._show_toast("[!] No conclusion text available to read aloud.", is_success=False)
+            return
+
+        if self.is_speaking_conclusion:
+            self.is_speaking_conclusion = False
+            self.btn_read.config(text="[ 🔊 READ ALOUD ]", fg=self.theme["accent_secondary"])
+            return
+
+        self.is_speaking_conclusion = True
+        self.btn_read.config(text="[ ■ READING... ]", fg=self.theme["accent_gold"])
+        self._show_toast("🔊 Reading executive conclusion aloud...")
+
+        def _on_finish():
+            self.is_speaking_conclusion = False
+            try:
+                self.btn_read.config(text="[ 🔊 READ ALOUD ]", fg=self.theme["accent_secondary"])
+            except Exception:
+                pass
+
+        def _on_error(err):
+            self.is_speaking_conclusion = False
+            try:
+                self.btn_read.config(text="[ 🔊 READ ALOUD ]", fg=self.theme["accent_secondary"])
+                self._show_toast(f"[!] TTS Notice: {err}", is_success=False)
+            except Exception:
+                pass
+
+        self.tts_manager.read_aloud_async(
+            text_to_speak,
+            rate=128,
+            on_finish=_on_finish,
+            on_error=_on_error
+        )
+
+    def on_show(self):
+        self.refresh_report()
+
+    def apply_theme(self):
+        t = self.theme
+        self.configure(bg=t["bg_main"])
+        self.header_frame.configure(bg=t["bg_main"])
+        self.title_lbl.configure(fg=t["accent_primary"], bg=t["bg_main"])
+        self.subtitle_lbl.configure(fg=t["text_muted"], bg=t["bg_main"])
+        self.controls_bar.configure(bg=t["bg_main"])
+        self.tabs_frame.configure(bg=t["bg_main"])
+        self.actions_frame.configure(bg=t["bg_main"])
+        self.toast_frame.configure(bg=t["bg_main"])
+        self.toast_lbl.configure(bg=t["bg_main"])
+        self.report_canvas.configure(bg=t["bg_main"])
+        self.report_inner.configure(bg=t["bg_main"])
+
+        # Update tabs
+        self._select_period(self.current_period)
+
+        self.btn_print.configure(bg=t["accent_gold"], fg="#000000")
+        self.btn_export.configure(bg=t["bg_card"], fg=t["accent_primary"])
+        self.btn_copy.configure(bg=t["bg_card"], fg=t["text_main"])
+        self.btn_read.configure(bg=t["bg_card"], fg=t["accent_secondary"])
+
+    def refresh_report(self):
+        t = self.theme
+        for child in self.report_inner.winfo_children():
+            child.destroy()
+
+        data = generate_report_data(self.current_period)
+        self.current_report_data = data
+
+        if not data.get("has_data", False):
+            no_card = tk.Frame(self.report_inner, bg=t["bg_card"], bd=2, relief="ridge", padx=24, pady=32)
+            no_card.pack(fill="x", pady=20)
+            tk.Label(
+                no_card,
+                text="[!] INSUFFICIENT DATA FOR REPORT",
+                font=FONT_RETRO_HEADER,
+                fg=t["accent_gold"],
+                bg=t["bg_card"]
+            ).pack(anchor="w")
+            tk.Label(
+                no_card,
+                text=data.get("executive_summary", "No journal entries found in this timeframe."),
+                font=FONT_RETRO_BODY,
+                fg=t["text_muted"],
+                bg=t["bg_card"],
+                pady=8
+            ).pack(anchor="w")
+            return
+
+        # -------------------------------------------------------------
+        # Section 1: Executive Conclusion & Verdict Callout Banner
+        # -------------------------------------------------------------
+        conclusion_card = tk.Frame(self.report_inner, bg=t["bg_card"], bd=2, relief="ridge", padx=16, pady=16)
+        conclusion_card.pack(fill="x", pady=(0, 14))
+
+        # Top Banner Row: Badges
+        badge_row = tk.Frame(conclusion_card, bg=t["bg_card"])
+        badge_row.pack(fill="x", pady=(0, 10))
+
+        verdict_badge = tk.Label(
+            badge_row,
+            text=f" {data.get('verdict_emoji', '🌟')} {data.get('verdict', 'EVALUATED')} ",
+            font=("Consolas", 10, "bold"),
+            bg=data.get("badge_color", t["accent_primary"]),
+            fg="#ffffff",
+            padx=10,
+            pady=4,
+            relief="solid",
+            bd=1
+        )
+        verdict_badge.pack(side="left", padx=(0, 8))
+
+        wellness_badge = tk.Label(
+            badge_row,
+            text=f"WELLNESS VITALITY: {data.get('wellness_score', 0)}/100",
+            font=("Consolas", 9, "bold"),
+            bg=t["bg_inner"],
+            fg=t["accent_primary"],
+            padx=8,
+            pady=4,
+            relief="solid",
+            bd=1
+        )
+        wellness_badge.pack(side="left", padx=(0, 8))
+
+        horizon_badge = tk.Label(
+            badge_row,
+            text=f"// {data.get('period_label')}",
+            font=FONT_RETRO_SMALL,
+            bg=t["bg_card"],
+            fg=t["text_muted"]
+        )
+        horizon_badge.pack(side="left")
+
+        # Heading
+        tk.Label(
+            conclusion_card,
+            text=">> EXECUTIVE CLINICAL & WELLNESS CONCLUSION:",
+            font=("Consolas", 10, "bold"),
+            fg=t["accent_gold"],
+            bg=t["bg_card"]
+        ).pack(anchor="w", pady=(0, 6))
+
+        # Full Conclusion Text
+        conc_lbl = tk.Label(
+            conclusion_card,
+            text=data.get("executive_conclusion", ""),
+            font=("Consolas", 9),
+            fg=t["text_main"],
+            bg=t["bg_card"],
+            justify="left",
+            wraplength=820
+        )
+        conc_lbl.pack(anchor="w", fill="x")
+
+        # Re-adjust wrap on inner frame configure
+        conclusion_card.bind("<Configure>", lambda e: conc_lbl.config(wraplength=max(300, e.width - 32)))
+
+        # Sub-status tags
+        tags_row = tk.Frame(conclusion_card, bg=t["bg_card"])
+        tags_row.pack(fill="x", pady=(10, 0))
+
+        tk.Label(
+            tags_row,
+            text=f"[ TRAJECTORY: {data.get('trajectory_text', '')} ]",
+            font=("Consolas", 8, "bold"),
+            fg=t["accent_green"],
+            bg=t["bg_card"]
+        ).pack(side="left", padx=(0, 10))
+
+        tk.Label(
+            tags_row,
+            text=f"[ STABILITY: {data.get('stability_text', '')} ]",
+            font=("Consolas", 8, "bold"),
+            fg=t["accent_secondary"],
+            bg=t["bg_card"]
+        ).pack(side="left")
+
+        # -------------------------------------------------------------
+        # Section 2: 4 Core Metric KPI Boxes
+        # -------------------------------------------------------------
+        kpi_row = tk.Frame(self.report_inner, bg=t["bg_main"])
+        kpi_row.pack(fill="x", pady=(0, 14))
+        for col_idx in range(4):
+            kpi_row.columnconfigure(col_idx, weight=1)
+
+        kpi_data = [
+            ("TOTAL LOGS", f"{data['total_entries']} entries", t["accent_primary"], f"{data['start_date']} to {data['end_date']}"),
+            ("AVG STAMINA", f"{data['avg_energy']}/10", t["accent_green"], f"StdDev: ±{data.get('energy_std_dev', 0)}"),
+            ("DOMINANT EMOTION", f"{data['top_mood_emoji']} {data['top_mood'].upper()}", t["accent_gold"], "Primary Posture"),
+            ("BURNOUT RISK", f"{data.get('burnout_ratio', 0)}%", data.get('burnout_color', t['accent_green']), data.get('burnout_level', 'LOW RISK'))
+        ]
+
+        for idx, (title, val, color, note) in enumerate(kpi_data):
+            box = tk.Frame(kpi_row, bg=t["bg_card"], bd=2, relief="ridge", padx=10, pady=8)
+            box.grid(row=0, column=idx, sticky="ew", padx=4 if idx > 0 else (0, 4))
+            tk.Label(box, text=f"// {title}", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_card"]).pack(anchor="w")
+            tk.Label(box, text=val, font=("Consolas", 11, "bold"), fg=color, bg=t["bg_card"]).pack(anchor="w", pady=(2, 1))
+            tk.Label(box, text=note, font=("Consolas", 7), fg=t["text_muted"], bg=t["bg_card"]).pack(anchor="w")
+
+        # -------------------------------------------------------------
+        # Section 3: Activity Impact & Correlation Analysis
+        # -------------------------------------------------------------
+        act_card = tk.Frame(self.report_inner, bg=t["bg_card"], bd=2, relief="ridge", padx=14, pady=12)
+        act_card.pack(fill="x", pady=(0, 14))
+
+        tk.Label(
+            act_card,
+            text="[ ⚡ ACTIVITY IMPACT & ENERGY CORRELATIONS ]",
+            font=FONT_RETRO_HEADER,
+            fg=t["accent_primary"],
+            bg=t["bg_card"]
+        ).pack(anchor="w", pady=(0, 8))
+
+        act_grid = tk.Frame(act_card, bg=t["bg_card"])
+        act_grid.pack(fill="x")
+
+        impacts = data.get("activity_impacts", [])
+        if impacts:
+            num_cols = min(3, len(impacts))
+            for i in range(num_cols):
+                act_grid.columnconfigure(i, weight=1)
+
+            for idx, act in enumerate(impacts):
+                col = idx % num_cols
+                r = idx // num_cols
+                item_frame = tk.Frame(act_grid, bg=t["bg_inner"], bd=1, relief="solid", padx=10, pady=8)
+                item_frame.grid(row=r, column=col, sticky="ew", padx=3, pady=3)
+
+                d_val = act["energy_delta"]
+                delta_str = f"+{d_val}" if d_val > 0 else f"{d_val}"
+                delta_color = t["accent_green"] if d_val > 0 else (t["accent_gold"] if d_val == 0 else "#ef4444")
+
+                tk.Label(
+                    item_frame,
+                    text=f"▶ {act['activity'].upper()} ({act['count']} logs)",
+                    font=("Consolas", 9, "bold"),
+                    fg=t["text_main"],
+                    bg=t["bg_inner"]
+                ).pack(anchor="w")
+
+                tk.Label(
+                    item_frame,
+                    text=f"Stamina: {act['avg_energy']}/10  |  Δ {delta_str} vs Avg",
+                    font=FONT_RETRO_SMALL,
+                    fg=delta_color,
+                    bg=t["bg_inner"]
+                ).pack(anchor="w", pady=(2, 0))
+
+                tk.Label(
+                    item_frame,
+                    text=f"Mood: {act['dominant_mood_emoji']} {act['dominant_mood']}",
+                    font=("Consolas", 8),
+                    fg=t["text_muted"],
+                    bg=t["bg_inner"]
+                ).pack(anchor="w")
+        else:
+            tk.Label(act_card, text="No activity data recorded in this period.", font=FONT_RETRO_SMALL, fg=t["text_muted"], bg=t["bg_card"]).pack(anchor="w")
+
+        # -------------------------------------------------------------
+        # Section 4: Actionable Lifestyle Prescriptions
+        # -------------------------------------------------------------
+        recs_card = tk.Frame(self.report_inner, bg=t["bg_card"], bd=2, relief="ridge", padx=14, pady=12)
+        recs_card.pack(fill="x", pady=(0, 14))
+
+        tk.Label(
+            recs_card,
+            text="[ 💡 ACTIONABLE LIFESTYLE & WELLNESS PRESCRIPTIONS ]",
+            font=FONT_RETRO_HEADER,
+            fg=t["accent_gold"],
+            bg=t["bg_card"]
+        ).pack(anchor="w", pady=(0, 8))
+
+        for idx, rec in enumerate(data.get("recommendations", []), 1):
+            rf = tk.Frame(recs_card, bg=t["bg_card"])
+            rf.pack(fill="x", pady=2)
+            tk.Label(rf, text=f"({idx})", font=("Consolas", 8, "bold"), fg=t["accent_primary"], bg=t["bg_card"]).pack(side="left", anchor="n", padx=(0, 6))
+            rec_lbl = tk.Label(
+                rf,
+                text=rec,
+                font=FONT_RETRO_SMALL,
+                fg=t["text_main"],
+                bg=t["bg_card"],
+                justify="left",
+                wraplength=800
+            )
+            rec_lbl.pack(side="left", fill="x", expand=True, anchor="w")
+            recs_card.bind("<Configure>", lambda e, l=rec_lbl: l.config(wraplength=max(280, e.width - 50)))
+
+        # -------------------------------------------------------------
+        # Section 5: Period Evaluated Journal Entries
+        # -------------------------------------------------------------
+        entries_card = tk.Frame(self.report_inner, bg=t["bg_card"], bd=2, relief="ridge", padx=14, pady=12)
+        entries_card.pack(fill="x", pady=(0, 14))
+
+        tk.Label(
+            entries_card,
+            text=f"[ 📖 EVALUATED JOURNAL ENTRIES ({data['total_entries']}) ]",
+            font=FONT_RETRO_HEADER,
+            fg=t["accent_primary"],
+            bg=t["bg_card"]
+        ).pack(anchor="w", pady=(0, 8))
+
+        entries_list = data.get("entries", [])
+        for e in entries_list:
+            ef = tk.Frame(entries_card, bg=t["bg_inner"], bd=1, relief="solid", padx=10, pady=8)
+            ef.pack(fill="x", pady=4)
+
+            top_row = tk.Frame(ef, bg=t["bg_inner"])
+            top_row.pack(fill="x")
+
+            d_str = e.get("date", "")
+            m_str = e.get("mood", "Good")
+            m_emoji = MOOD_MAP.get(m_str, {}).get("emoji", "😊")
+            en_val = e.get("energy", 5)
+            act_str = e.get("activity", "Other")
+
+            tk.Label(top_row, text=f"📅 {d_str}", font=("Consolas", 8, "bold"), fg=t["accent_gold"], bg=t["bg_inner"]).pack(side="left", padx=(0, 10))
+            tk.Label(top_row, text=f"{m_emoji} {m_str}", font=("Consolas", 8, "bold"), fg=t["accent_primary"], bg=t["bg_inner"]).pack(side="left", padx=(0, 10))
+            tk.Label(top_row, text=f"⚡ {make_pixel_bar(en_val, 10, 8)}", font=("Consolas", 8), fg=t["accent_green"], bg=t["bg_inner"]).pack(side="left", padx=(0, 10))
+            tk.Label(top_row, text=f"[{act_str.upper()}]", font=("Consolas", 8), fg=t["text_muted"], bg=t["bg_inner"]).pack(side="left")
+
+            txt = e.get("text", "").strip()
+            if txt:
+                tk.Label(
+                    ef,
+                    text=txt,
+                    font=("Consolas", 8),
+                    fg=t["text_main"],
+                    bg=t["bg_inner"],
+                    justify="left",
+                    wraplength=780
+                ).pack(anchor="w", pady=(4, 0))
+
